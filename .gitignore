@@ -1,0 +1,30 @@
+# Ambiente virtual — NUNCA subir para o repositório
+.venv/
+venv/
+env/
+
+# Cache Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Banco de dados local
+*.db
+*.sqlite3
+
+# VS Code
+.vscode/
+
+# PyCharm
+.idea/
+
+# macOS
+.DS_Store
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Distribuição / packaging
+dist/
+build/
+*.egg-info/
