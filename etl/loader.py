@@ -109,3 +109,103 @@ class MongoLoader:
         """Fecha a conexão com o MongoDB Atlas."""
         self.client.close()
         self.logger.info("Conexão com MongoDB Atlas encerrada.")
+
+
+import sqlite3
+
+
+class SQLiteLoader:
+    """Persistência adicional dos dados de contratos em banco SQLite local.
+
+    Implementado como diferencial para permitir análise offline dos dados
+    sem dependência de conectividade com o MongoDB Atlas.
+    """
+
+    def __init__(self, db_path: str = "db/contratos.db") -> None:
+        """Inicializa o loader e cria as tabelas necessárias.
+
+        Args:
+            db_path (str): Caminho para o arquivo SQLite.
+        """
+        import os
+
+        self.db_path = db_path
+        self.logger = get_logger(self.__class__.__name__)
+        os.makedirs(os.path.dirname(db_path), exist_ok=True)
+        self.connection = sqlite3.connect(db_path)
+        self._create_tables()
+        self.logger.info("SQLiteLoader inicializado em '%s'.", db_path)
+
+    def _create_tables(self) -> None:
+        """Cria as tabelas do banco SQLite caso não existam.
+
+        Tabelas criadas:
+        - contratos: campos principais de cada contrato PNCP.
+        """
+        self.connection.execute("""
+            CREATE TABLE IF NOT EXISTS contratos (
+                id                    INTEGER PRIMARY KEY AUTOINCREMENT,
+                numero_controle_pncp  TEXT    UNIQUE,
+                objeto_contrato       TEXT,
+                valor_inicial         REAL,
+                data_publicacao_pncp  TEXT,
+                data_vigencia_inicio  TEXT,
+                data_vigencia_fim     TEXT,
+                orgao_cnpj            TEXT,
+                orgao_razao_social    TEXT,
+                etl_timestamp         TEXT,
+                source                TEXT
+            )
+        """)
+        self.connection.commit()
+
+    def load(self, records: list[dict[str, Any]]) -> int:
+        """Persiste os registros no SQLite via INSERT OR IGNORE.
+
+        Args:
+            records (list[dict]): Lista de documentos transformados.
+
+        Returns:
+            int: Número de registros inseridos com sucesso.
+        """
+        if not records:
+            self.logger.warning("Nenhum registro para carregar no SQLite.")
+            return 0
+
+        cursor = self.connection.cursor()
+        inserted = 0
+
+        for doc in records:
+            orgao = doc.get("orgaoEntidade") or {}
+            cursor.execute(
+                """
+                INSERT OR IGNORE INTO contratos (
+                    numero_controle_pncp, objeto_contrato, valor_inicial,
+                    data_publicacao_pncp, data_vigencia_inicio, data_vigencia_fim,
+                    orgao_cnpj, orgao_razao_social, etl_timestamp, source
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    doc.get("numeroControlePNCP"),
+                    doc.get("objetoContrato"),
+                    doc.get("valorInicial"),
+                    doc.get("dataPublicacaoPncp"),
+                    doc.get("dataVigenciaInicio"),
+                    doc.get("dataVigenciaFim"),
+                    orgao.get("cnpj"),
+                    orgao.get("razaoSocial"),
+                    doc.get("_etl_timestamp"),
+                    doc.get("_source"),
+                ),
+            )
+            if cursor.rowcount:
+                inserted += 1
+
+        self.connection.commit()
+        self.logger.info("SQLite: %d registros inseridos.", inserted)
+        return inserted
+
+    def close(self) -> None:
+        """Fecha a conexão com o banco SQLite."""
+        self.connection.close()
+        self.logger.info("Conexão SQLite encerrada.")
