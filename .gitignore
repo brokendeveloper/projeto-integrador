@@ -28,3 +28,9 @@ __pycache__/
 dist/
 build/
 *.egg-info/
+
+# Ambiente
+.env
+# Parquet
+*.parquet
+data/

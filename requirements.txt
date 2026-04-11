@@ -1,3 +1,10 @@
-black==24.10.0
-pandas==2.2.3
+pymongo==4.7.2
+python-dotenv==1.0.1
 requests==2.32.3
+tenacity==8.3.0
+pandas==2.2.3
+pyarrow==16.1.0
+streamlit==1.35.0
+plotly==5.22.0
+pytest==8.2.2
+pytest-mock==3.14.0
