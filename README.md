@@ -127,3 +127,8 @@ Coleção `contratos` — campos principais:
 - **Notebook EDA**: análise exploratória em `notebooks/exploratory_analysis.ipynb`
 - **Retry automático**: backoff exponencial com `tenacity` (3 tentativas)
 - **Rate limiting**: `time.sleep(0.5)` entre páginas para respeitar limites da API
+
+## Participantes
+
+- Luccas Fernandes
+- Gabriel Nogueira
