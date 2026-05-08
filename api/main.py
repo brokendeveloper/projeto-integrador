@@ -5,6 +5,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from config.settings import MONGODB_URI, MONGODB_DB
 from api.auth.router import router as auth_router
 from api.editais.router import router as editais_router
+from api.checklist.router import router as checklist_router
 
 
 @asynccontextmanager
@@ -31,6 +32,7 @@ app.add_middleware(
 
 app.include_router(auth_router)
 app.include_router(editais_router)
+app.include_router(checklist_router)
 
 
 @app.get("/health")
