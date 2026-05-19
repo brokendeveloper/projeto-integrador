@@ -8,6 +8,7 @@ from api.editais.router import router as editais_router
 from api.checklist.router import router as checklist_router
 from api.documentos.router import router as documentos_router
 from api.alertas.router import router as alertas_router
+from api.historico.router import router as historico_router
 
 
 @asynccontextmanager
@@ -37,6 +38,7 @@ app.include_router(editais_router)
 app.include_router(checklist_router)
 app.include_router(documentos_router)
 app.include_router(alertas_router)
+app.include_router(historico_router)
 
 
 @app.get("/health")
