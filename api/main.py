@@ -9,6 +9,8 @@ from api.checklist.router import router as checklist_router
 from api.documentos.router import router as documentos_router
 from api.alertas.router import router as alertas_router
 from api.historico.router import router as historico_router
+from api.lgpd.router import router as lgpd_router
+from api.middleware import configurar_middleware, SecurityHeadersMiddleware
 
 
 @asynccontextmanager
@@ -24,6 +26,9 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+configurar_middleware(app)
+
+app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -39,6 +44,7 @@ app.include_router(checklist_router)
 app.include_router(documentos_router)
 app.include_router(alertas_router)
 app.include_router(historico_router)
+app.include_router(lgpd_router)
 
 
 @app.get("/health")
