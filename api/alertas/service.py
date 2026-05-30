@@ -11,7 +11,10 @@ async def criar_alerta(dados: dict, usuario: dict, db: AsyncIOMotorDatabase) -> 
         if count >= 3:
             raise HTTPException(
                 status_code=403,
-                detail="Plano gratuito permite no máximo 3 alertas ativos. Faça upgrade para premium.",
+                detail=(
+                    "Você atingiu o limite de 3 alertas do plano gratuito. "
+                    "Remova um alerta existente ou faça upgrade para o plano premium."
+                ),
             )
 
     alerta = {

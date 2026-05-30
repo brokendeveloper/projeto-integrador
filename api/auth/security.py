@@ -3,14 +3,20 @@ from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY", "dev-secret-inseguro-troque-em-producao")
 JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM", "HS256")
 JWT_EXPIRE_MINUTES: int = int(os.getenv("JWT_EXPIRE_MINUTES", "1440"))
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+
+# HTTPBearer exibe no Swagger um campo único "Value" onde o usuário cola o token.
+# Substitui OAuth2PasswordBearer que gerava formulário username/password → erro 422.
+_bearer_scheme = HTTPBearer(
+    scheme_name="Bearer Token",
+    description="Cole o token retornado em POST /auth/login. Formato: o token puro, sem 'Bearer '.",
+)
 
 
 def hash_senha(senha: str) -> str:
@@ -28,10 +34,13 @@ def criar_token(data: dict) -> str:
     return jwt.encode(payload, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
 
 
-async def get_current_user(token: str = Depends(oauth2_scheme)):
+async def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(_bearer_scheme),
+) -> str:
+    token = credentials.credentials
     excecao = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Token inválido ou expirado",
+        detail="Sua sessão expirou. Faça login novamente para continuar.",
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:

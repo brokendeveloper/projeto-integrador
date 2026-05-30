@@ -20,11 +20,14 @@ async def fazer_upload(
     db: AsyncIOMotorDatabase,
 ) -> dict:
     if arquivo.content_type not in TIPOS_PERMITIDOS:
-        raise HTTPException(status_code=400, detail="Tipo de arquivo não permitido")
+        raise HTTPException(
+            status_code=400,
+            detail="Tipo de arquivo não aceito. Envie documentos em PDF, Word (.docx) ou imagens (JPG, PNG).",
+        )
 
     conteudo = await arquivo.read()
     if len(conteudo) > TAMANHO_MAXIMO:
-        raise HTTPException(status_code=413, detail="Arquivo excede 10MB")
+        raise HTTPException(status_code=413, detail="O arquivo é muito grande. O limite é de 10 MB por documento.")
 
     bucket = AsyncIOMotorGridFSBucket(db, bucket_name="documentos")
     file_id = await bucket.upload_from_stream(
@@ -74,6 +77,6 @@ async def excluir_documento(doc_id: str, usuario: dict, db: AsyncIOMotorDatabase
 
     arquivo = await bucket.open_download_stream(obj_id)
     if arquivo.metadata.get("usuario_id") != str(usuario["_id"]):
-        raise HTTPException(status_code=403, detail="Sem permissão para excluir este documento")
+        raise HTTPException(status_code=403, detail="Você não tem permissão para remover este documento.")
 
     await bucket.delete(obj_id)

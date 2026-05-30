@@ -61,7 +61,10 @@ async def buscar_edital_por_id(edital_id: str, db: AsyncIOMotorDatabase) -> dict
     try:
         doc = await db.contratos.find_one({"_id": ObjectId(edital_id)})
     except Exception:
-        raise HTTPException(status_code=400, detail="ID inválido")
+        raise HTTPException(status_code=400, detail="ID de edital inválido. Verifique o formato e tente novamente.")
     if not doc:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Edital não encontrado")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Edital não encontrado. Ele pode ter sido removido do PNCP.",
+        )
     return _serializar_edital(doc)
