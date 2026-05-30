@@ -63,8 +63,8 @@ export default function RegisterScreen() {
     >
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <View style={styles.card}>
-          <Text style={styles.titulo}>Criar conta</Text>
-          <Text style={styles.subtitulo}>Cadastre seu MEI</Text>
+          <Text style={styles.titulo}>LicitaME</Text>
+          <Text style={styles.subtitulo}>Crie sua conta de MEI</Text>
 
           <TextInput
             style={styles.input}

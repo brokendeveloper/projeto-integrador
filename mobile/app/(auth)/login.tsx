@@ -42,8 +42,8 @@ export default function LoginScreen() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <View style={styles.card}>
-        <Text style={styles.titulo}>MEI Licitações</Text>
-        <Text style={styles.subtitulo}>Acesse sua conta</Text>
+        <Text style={styles.titulo}>LicitaME</Text>
+        <Text style={styles.subtitulo}>Entre na sua conta</Text>
 
         <TextInput
           style={styles.input}
