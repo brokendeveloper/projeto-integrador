@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LicitaME — Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Geist', 'ui-sans-serif', 'system-ui'] },
+          colors: {
+            zinc: {
+              925: '#111113',
+              950: '#09090b',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { background: #09090b; font-family: 'Geist', sans-serif; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 3px; }
+    .card { background: #18181b; border: 1px solid #27272a; border-radius: 12px; }
+    .kpi-value { font-size: 2rem; font-weight: 700; letter-spacing: -0.03em; }
+    .badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px;
+             border-radius: 9999px; font-size: 0.7rem; font-weight: 600; letter-spacing: .4px; }
+    .badge-live { background: rgba(34,197,94,.15); color: #4ade80; border: 1px solid rgba(34,197,94,.25); }
+    .badge-batch { background: rgba(255,107,53,.15); color: #ff6b35; border: 1px solid rgba(255,107,53,.3); }
+    .table-row:hover { background: #27272a; }
+    .spinner { width:20px;height:20px;border:2px solid #3f3f46;border-top-color:#ff6b35;
+               border-radius:50%;animation:spin .8s linear infinite;display:inline-block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #login-overlay { position:fixed;inset:0;z-index:50;background:rgba(9,9,11,.92);
+                     backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center; }
+    .chart-container { position:relative; height:280px; }
+    nav a.active { color:#fff; border-bottom: 2px solid #ff6b35; }
+  </style>
+</head>
+<body class="text-zinc-100 min-h-screen">
+
+<!-- ─── Login Overlay ──────────────────────────────────────────────────── -->
+<div id="login-overlay">
+  <div class="card p-8 w-full max-w-sm mx-4">
+    <div class="flex items-center gap-3 mb-6">
+      <span class="text-2xl">⚖️</span>
+      <div>
+        <div class="font-semibold text-white text-lg">LicitaME</div>
+        <div class="text-xs text-zinc-400">Dashboard de Analytics</div>
+      </div>
+    </div>
+    <div id="login-error" class="hidden mb-4 text-sm text-red-400 bg-red-950/40 border border-red-900/50 rounded-lg px-4 py-3"></div>
+    <div class="space-y-3">
+      <input id="login-email" type="email" placeholder="E-mail" autocomplete="email"
+             class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-2.5 text-sm
+                    text-zinc-100 placeholder-zinc-500 outline-none focus:border-zinc-500 transition" />
+      <input id="login-password" type="password" placeholder="Senha" autocomplete="current-password"
+             class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-2.5 text-sm
+                    text-zinc-100 placeholder-zinc-500 outline-none focus:border-zinc-500 transition" />
+      <button id="login-btn" onclick="doLogin()"
+              class="w-full bg-white text-zinc-900 font-semibold rounded-lg py-2.5 text-sm
+                     hover:bg-zinc-200 transition active:scale-95">
+        Entrar
+      </button>
+    </div>
+    <p class="text-xs text-zinc-500 mt-4 text-center">
+      Não tem conta? Registre-se via <code class="text-zinc-300">POST /auth/register</code>
+    </p>
+  </div>
+</div>
+
+<!-- ─── Top Nav ────────────────────────────────────────────────────────── -->
+<header class="border-b border-zinc-800 px-6 py-3 flex items-center justify-between sticky top-0 z-30"
+        style="background:rgba(9,9,11,.85);backdrop-filter:blur(12px);">
+  <div class="flex items-center gap-3">
+    <span class="text-xl">⚖️</span>
+    <span class="font-semibold text-white">LicitaME</span>
+    <span class="text-zinc-600 text-sm hidden sm:block">/ Dashboard</span>
+  </div>
+  <nav class="flex items-center gap-5 text-sm text-zinc-400">
+    <a href="/dashboard" class="hover:text-white transition active pb-0.5">Dashboard</a>
+    <a href="/app" class="hover:text-white transition">Assistente</a>
+    <a href="/docs" target="_blank" class="hover:text-white transition">API</a>
+    <button onclick="doLogout()" class="text-zinc-500 hover:text-red-400 transition text-xs ml-2">Sair</button>
+  </nav>
+</header>
+
+<!-- ─── Main ──────────────────────────────────────────────────────────── -->
+<main class="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-10">
+
+  <!-- Page title -->
+  <div class="flex items-start justify-between">
+    <div>
+      <h1 class="text-2xl font-bold text-white">Análise de Contratos PNCP</h1>
+      <p class="text-sm text-zinc-400 mt-1">Dados em tempo real via MongoDB · Pipeline batch PySpark</p>
+    </div>
+    <button onclick="loadAll()"
+            class="flex items-center gap-2 px-4 py-2 rounded-lg border border-zinc-700 text-sm
+                   text-zinc-300 hover:text-white hover:border-zinc-500 transition active:scale-95">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/>
+      </svg>
+      Atualizar
+    </button>
+  </div>
+
+  <!-- ── Seção 1: MongoDB em Tempo Real ──────────────────────────────── -->
+  <section>
+    <div class="flex items-center gap-3 mb-4">
+      <h2 class="text-base font-semibold text-white">Visão em Tempo Real</h2>
+      <span class="badge badge-live">● LIVE</span>
+    </div>
+
+    <!-- KPIs -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+      <div class="card p-5">
+        <div class="text-xs text-zinc-500 uppercase tracking-wider mb-1">Total de Contratos</div>
+        <div class="kpi-value text-white" id="kpi-total">—</div>
+      </div>
+      <div class="card p-5">
+        <div class="text-xs text-zinc-500 uppercase tracking-wider mb-1">Favoráveis ao MEI</div>
+        <div class="kpi-value text-emerald-400" id="kpi-mei">—</div>
+      </div>
+      <div class="card p-5">
+        <div class="text-xs text-zinc-500 uppercase tracking-wider mb-1">Valor Médio (R$)</div>
+        <div class="kpi-value text-white" id="kpi-media">—</div>
+      </div>
+      <div class="card p-5">
+        <div class="text-xs text-zinc-500 uppercase tracking-wider mb-1">Valor Máximo (R$)</div>
+        <div class="kpi-value text-white" id="kpi-max">—</div>
+      </div>
+    </div>
+
+    <!-- Charts row -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="card p-5">
+        <div class="text-sm font-medium text-zinc-300 mb-4">Top 15 Órgãos por Contratos</div>
+        <div class="chart-container">
+          <canvas id="chart-orgaos"></canvas>
+        </div>
+      </div>
+      <div class="card p-5">
+        <div class="text-sm font-medium text-zinc-300 mb-4">Distribuição MEI vs Outros</div>
+        <div class="chart-container flex items-center justify-center">
+          <canvas id="chart-doughnut" style="max-width:240px;max-height:240px;"></canvas>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Seção 2: PySpark Batch ──────────────────────────────────────── -->
+  <section id="spark-section">
+    <div class="flex items-center gap-3 mb-4">
+      <h2 class="text-base font-semibold text-white">Resultados do Pipeline PySpark</h2>
+      <span class="badge badge-batch">⚡ BATCH</span>
+      <span class="text-xs text-zinc-500">spark/pyspark_transform.py → spark/output/</span>
+    </div>
+
+    <div id="spark-unavailable" class="hidden card p-6 text-center text-zinc-400 text-sm">
+      Os CSVs do PySpark ainda não foram gerados.<br/>
+      Execute <code class="text-zinc-300">python spark/pyspark_transform.py</code> e clique em Atualizar.
+    </div>
+
+    <div id="spark-content" class="hidden space-y-4">
+      <!-- Spark KPIs -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div class="card p-5">
+          <div class="text-xs text-zinc-500 uppercase tracking-wider mb-1">Processados</div>
+          <div class="kpi-value text-white" id="sp-total">—</div>
+        </div>
+        <div class="card p-5">
+          <div class="text-xs text-zinc-500 uppercase tracking-wider mb-1">MEI (≤ R$ 80k)</div>
+          <div class="kpi-value text-orange-400" id="sp-mei">—</div>
+        </div>
+        <div class="card p-5">
+          <div class="text-xs text-zinc-500 uppercase tracking-wider mb-1">Top Órgão</div>
+          <div class="text-sm font-semibold text-white truncate mt-2" id="sp-orgao" title="">—</div>
+          <div class="text-xs text-zinc-500 mt-0.5" id="sp-orgao-count"></div>
+        </div>
+        <div class="card p-5">
+          <div class="text-xs text-zinc-500 uppercase tracking-wider mb-1">Último Processamento</div>
+          <div class="text-sm font-semibold text-white mt-2" id="sp-ts">—</div>
+        </div>
+      </div>
+
+      <!-- Spark charts -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="card p-5">
+          <div class="text-sm font-medium text-zinc-300 mb-4">Top Órgãos — saída PySpark</div>
+          <div class="chart-container">
+            <canvas id="chart-sp-orgaos"></canvas>
+          </div>
+        </div>
+        <div class="card p-5">
+          <div class="text-sm font-medium text-zinc-300 mb-4">Distribuição de Valores MEI (PySpark)</div>
+          <div class="chart-container">
+            <canvas id="chart-sp-buckets"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Spark MEI sample table -->
+      <div class="card overflow-hidden">
+        <div class="px-5 py-4 border-b border-zinc-800 flex items-center justify-between">
+          <div class="text-sm font-medium text-zinc-300">Amostra de Contratos MEI-Favoráveis</div>
+          <div class="text-xs text-zinc-500" id="sp-sample-label"></div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs text-zinc-400">
+            <thead>
+              <tr class="border-b border-zinc-800 text-zinc-500 uppercase tracking-wider">
+                <th class="px-4 py-3 text-left font-medium w-36">Controle</th>
+                <th class="px-4 py-3 text-left font-medium">Objeto</th>
+                <th class="px-4 py-3 text-right font-medium w-28">Valor (R$)</th>
+                <th class="px-4 py-3 text-left font-medium w-44">Órgão</th>
+                <th class="px-4 py-3 text-left font-medium w-24">Publicação</th>
+              </tr>
+            </thead>
+            <tbody id="sp-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ─── Loading bar ───────────────────────────────────────────────────── -->
+<div id="loading-bar" class="hidden fixed top-0 left-0 right-0 h-0.5 z-50"
+     style="background:linear-gradient(90deg,#ff6b35,#ff9500);animation:progress 1.2s ease-in-out infinite alternate;">
+</div>
+<style>@keyframes progress{from{transform:scaleX(0);transform-origin:left}to{transform:scaleX(1);transform-origin:left}}</style>
+
+<script>
+// ─── Auth ─────────────────────────────────────────────────────────────────
+let _token = localStorage.getItem('licitame_token') || '';
+
+function setToken(t) {
+  _token = t;
+  localStorage.setItem('licitame_token', t);
+}
+
+function authHeaders() {
+  return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _token };
+}
+
+async function doLogin() {
+  const btn = document.getElementById('login-btn');
+  const errEl = document.getElementById('login-error');
+  const email = document.getElementById('login-email').value.trim();
+  const pwd = document.getElementById('login-password').value;
+  btn.textContent = 'Entrando…';
+  btn.disabled = true;
+  errEl.classList.add('hidden');
+  try {
+    const res = await fetch('/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, senha: pwd }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Erro ao fazer login.');
+    setToken(data.access_token);
+    document.getElementById('login-overlay').style.display = 'none';
+    loadAll();
+  } catch (e) {
+    errEl.textContent = e.message;
+    errEl.classList.remove('hidden');
+  } finally {
+    btn.textContent = 'Entrar';
+    btn.disabled = false;
+  }
+}
+
+document.getElementById('login-password').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin();
+});
+
+function doLogout() {
+  localStorage.removeItem('licitame_token');
+  location.reload();
+}
+
+// ─── API helpers ──────────────────────────────────────────────────────────
+async function apiFetch(url) {
+  const res = await fetch(url, { headers: authHeaders() });
+  if (res.status === 401) { doLogout(); return null; }
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+// ─── Charts registry ─────────────────────────────────────────────────────
+const _charts = {};
+function destroyChart(id) { if (_charts[id]) { _charts[id].destroy(); delete _charts[id]; } }
+
+function makeHBarChart(canvasId, labels, values, color = '#ff6b35') {
+  destroyChart(canvasId);
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  _charts[canvasId] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{ data: values, backgroundColor: color, borderRadius: 4, borderSkipped: false }],
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: {
+        label: ctx => ' ' + Number(ctx.raw).toLocaleString('pt-BR') + ' contratos',
+      }}},
+      scales: {
+        x: { grid: { color: '#27272a' }, ticks: { color: '#71717a', font: { size: 11 } } },
+        y: { grid: { display: false }, ticks: { color: '#a1a1aa', font: { size: 11 } } },
+      },
+    },
+  });
+}
+
+function makeDoughnutChart(canvasId, labels, values, colors) {
+  destroyChart(canvasId);
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  _charts[canvasId] = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels,
+      datasets: [{ data: values, backgroundColor: colors, borderWidth: 2, borderColor: '#18181b' }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      cutout: '65%',
+      plugins: {
+        legend: { position: 'bottom', labels: { color: '#a1a1aa', padding: 16, font: { size: 12 } } },
+        tooltip: { callbacks: {
+          label: ctx => ' ' + Number(ctx.raw).toLocaleString('pt-BR'),
+        }},
+      },
+    },
+  });
+}
+
+function makeBarChart(canvasId, labels, values, color = '#ff6b35') {
+  destroyChart(canvasId);
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  _charts[canvasId] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{ data: values, backgroundColor: color + 'cc', borderColor: color,
+                   borderWidth: 1, borderRadius: 4 }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: {
+        label: ctx => ' ' + Number(ctx.raw).toLocaleString('pt-BR') + ' contratos',
+      }}},
+      scales: {
+        x: { grid: { display: false }, ticks: { color: '#71717a', font: { size: 10 } } },
+        y: { grid: { color: '#27272a' }, ticks: { color: '#71717a', font: { size: 11 } } },
+      },
+    },
+  });
+}
+
+// ─── Format helpers ───────────────────────────────────────────────────────
+function fmtBRL(v) {
+  if (v == null || isNaN(v)) return '—';
+  if (v >= 1_000_000) return 'R$ ' + (v/1_000_000).toFixed(1) + 'M';
+  if (v >= 1_000) return 'R$ ' + (v/1_000).toFixed(0) + 'k';
+  return 'R$ ' + Number(v).toFixed(2);
+}
+
+function fmtDate(s) {
+  if (!s) return '—';
+  try { return new Date(s).toLocaleDateString('pt-BR'); } catch { return s; }
+}
+
+function fmtTs(s) {
+  if (!s) return '—';
+  try { return new Date(s).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }); } catch { return s; }
+}
+
+// ─── Load live section ────────────────────────────────────────────────────
+async function loadLive() {
+  const [stats, topResp, meiResp] = await Promise.all([
+    apiFetch('/analytics/estatisticas'),
+    apiFetch('/analytics/top-orgaos?n=15'),
+    apiFetch('/analytics/contratos-mei?limite=1'),
+  ]);
+
+  if (stats) {
+    document.getElementById('kpi-total').textContent = Number(stats.total_contratos).toLocaleString('pt-BR');
+    document.getElementById('kpi-media').textContent = fmtBRL(stats.media_valor);
+    document.getElementById('kpi-max').textContent = fmtBRL(stats.max_valor);
+  }
+  if (meiResp) {
+    document.getElementById('kpi-mei').textContent = Number(meiResp.total).toLocaleString('pt-BR');
+  }
+
+  if (topResp && topResp.orgaos.length) {
+    const labels = topResp.orgaos.map(o => (o.orgao || 'Desconhecido').substring(0, 28));
+    const values = topResp.orgaos.map(o => o.total_contratos);
+    makeHBarChart('chart-orgaos', labels.reverse(), values.reverse());
+  }
+
+  if (stats && meiResp) {
+    const total = stats.total_contratos;
+    const mei = meiResp.total;
+    makeDoughnutChart('chart-doughnut',
+      ['Favoráveis ao MEI', 'Demais contratos'],
+      [mei, Math.max(0, total - mei)],
+      ['#4ade80', '#3f3f46'],
+    );
+  }
+}
+
+// ─── Load PySpark section ─────────────────────────────────────────────────
+async function loadSpark() {
+  const data = await apiFetch('/analytics/spark');
+  if (!data) return;
+
+  if (!data.disponivel) {
+    document.getElementById('spark-unavailable').classList.remove('hidden');
+    document.getElementById('spark-content').classList.add('hidden');
+    return;
+  }
+
+  document.getElementById('spark-unavailable').classList.add('hidden');
+  document.getElementById('spark-content').classList.remove('hidden');
+
+  document.getElementById('sp-total').textContent = Number(data.total_processado).toLocaleString('pt-BR');
+  document.getElementById('sp-mei').textContent = Number(data.total_mei).toLocaleString('pt-BR');
+  document.getElementById('sp-ts').textContent = fmtTs(data.ultimo_processamento);
+
+  if (data.top_orgao) {
+    const el = document.getElementById('sp-orgao');
+    const short = data.top_orgao.length > 24 ? data.top_orgao.substring(0, 22) + '…' : data.top_orgao;
+    el.textContent = short;
+    el.title = data.top_orgao;
+    document.getElementById('sp-orgao-count').textContent = `${data.top_orgao_count} contratos`;
+  }
+
+  if (data.top_orgaos.length) {
+    const items = data.top_orgaos.slice(0, 15);
+    const labels = items.map(o => (o.orgao || 'Desconhecido').substring(0, 28));
+    const values = items.map(o => o.count);
+    makeHBarChart('chart-sp-orgaos', labels.reverse(), values.reverse(), '#f97316');
+  }
+
+  if (data.mei_buckets.length) {
+    const labels = data.mei_buckets.map(b => b.label);
+    const values = data.mei_buckets.map(b => b.count);
+    makeBarChart('chart-sp-buckets', labels, values, '#f97316');
+  }
+
+  // Table
+  const tbody = document.getElementById('sp-table-body');
+  tbody.innerHTML = '';
+  if (data.mei_sample.length) {
+    document.getElementById('sp-sample-label').textContent = `${data.mei_sample.length} registros`;
+    data.mei_sample.forEach(c => {
+      const tr = document.createElement('tr');
+      tr.className = 'table-row border-b border-zinc-800/50 transition';
+      const obj = c.objeto ? c.objeto.substring(0, 70) + (c.objeto.length > 70 ? '…' : '') : '—';
+      const orgao = c.orgao_nome ? c.orgao_nome.substring(0, 28) + (c.orgao_nome.length > 28 ? '…' : '') : '—';
+      tr.innerHTML = `
+        <td class="px-4 py-2.5 font-mono text-zinc-500 text-xs">${c.numero_controle || '—'}</td>
+        <td class="px-4 py-2.5 text-zinc-300">${obj}</td>
+        <td class="px-4 py-2.5 text-right text-emerald-400 font-medium">${fmtBRL(c.valor_inicial)}</td>
+        <td class="px-4 py-2.5 text-zinc-400" title="${c.orgao_nome || ''}">${orgao}</td>
+        <td class="px-4 py-2.5 text-zinc-500">${fmtDate(c.data_publicacao)}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+}
+
+// ─── Load all ─────────────────────────────────────────────────────────────
+function setLoading(on) {
+  document.getElementById('loading-bar').classList.toggle('hidden', !on);
+}
+
+async function loadAll() {
+  setLoading(true);
+  try {
+    await Promise.all([loadLive(), loadSpark()]);
+  } catch (e) {
+    console.error('Erro ao carregar dados:', e);
+  } finally {
+    setLoading(false);
+  }
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────
+if (_token) {
+  document.getElementById('login-overlay').style.display = 'none';
+  loadAll();
+}
+</script>
+</body>
+</html>
