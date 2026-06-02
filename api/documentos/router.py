@@ -11,7 +11,7 @@ router = APIRouter(prefix="/editais/{edital_id}/documentos", tags=["📁 Documen
 async def upload_documento(
     edital_id: str,
     arquivo: UploadFile = File(...),
-    categoria: str = Form(...),
+    categoria: str = Form("outros"),
     db: AsyncIOMotorDatabase = Depends(get_db),
     usuario: dict = Depends(get_usuario_atual),
 ):

@@ -5,28 +5,29 @@ from enum import Enum
 
 class StatusParticipacao(str, Enum):
     em_andamento = "em_andamento"
-    venceu = "venceu"
-    perdeu = "perdeu"
-    desistiu = "desistiu"
+    vencida = "vencida"
+    perdida = "perdida"
+    desistida = "desistida"
 
 
 class ParticipacaoCriar(BaseModel):
     edital_id: str
-    numero_controle_pncp: str
-    objeto: str
-    valor: Optional[float] = None
+    numero_controle_pncp: Optional[str] = None
+    objeto: Optional[str] = None
+    valor_proposta: Optional[float] = None
     status: StatusParticipacao = StatusParticipacao.em_andamento
 
 
-class ParticipacaoResponse(ParticipacaoCriar):
+class ParticipacaoResponse(BaseModel):
     id: str
-    usuario_id: str
-    registrado_em: str
+    edital_id: str
+    status: str
+    valor_proposta: Optional[float] = None
+    data_participacao: str
 
 
 class ResumoResponse(BaseModel):
     total: int
-    venceu: int
+    vencidas: int
     em_andamento: int
-    perdeu: int
-    desistiu: int
+    perdidas: int

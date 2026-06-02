@@ -1,6 +1,7 @@
 from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorGridFSBucket
 from fastapi import UploadFile, HTTPException
 from bson import ObjectId
+from datetime import datetime
 import hashlib
 
 
@@ -44,9 +45,11 @@ async def fazer_upload(
     return {
         "id": str(file_id),
         "nome": arquivo.filename,
+        "tipo": arquivo.content_type,
         "categoria": categoria,
         "tamanho": len(conteudo),
         "edital_id": edital_id,
+        "criado_em": datetime.utcnow().isoformat(),
     }
 
 
@@ -61,9 +64,11 @@ async def listar_documentos(edital_id: str, usuario: dict, db: AsyncIOMotorDatab
         documentos.append({
             "id": str(doc._id),
             "nome": doc.filename,
-            "categoria": doc.metadata.get("categoria"),
+            "tipo": doc.metadata.get("content_type"),
+            "categoria": doc.metadata.get("categoria", "outros"),
             "tamanho": doc.length,
             "edital_id": edital_id,
+            "criado_em": doc.upload_date.isoformat() if hasattr(doc, "upload_date") and doc.upload_date else None,
         })
     return documentos
 

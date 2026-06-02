@@ -86,14 +86,14 @@ async def test_criar_alerta_sucesso():
             "nome": "Alerta TI",
             "cnae": "6201-5/01",
             "valor_max": 80000.0,
-            "regiao": "SP",
+            "uf": "SP",
         })
 
     app.dependency_overrides.clear()
     assert response.status_code == 201
     data = response.json()
     assert data["nome"] == "Alerta TI"
-    assert data["usuario_id"] == str(usuario["_id"])
+    assert "id" in data
 
 
 @pytest.mark.asyncio

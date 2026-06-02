@@ -38,5 +38,5 @@ async def atualizar_requisito(
     usuario: dict = Depends(get_usuario_atual),
 ):
     return await marcar_requisito(
-        edital_id, dados.requisito_id, dados.concluido, dados.documento_id, usuario, db
+        edital_id, dados.item_id, dados.concluido, dados.documento_id, usuario, db
     )

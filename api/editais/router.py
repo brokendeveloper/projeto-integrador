@@ -23,6 +23,7 @@ router = APIRouter(prefix="/editais", tags=["📄 Editais"])
     ),
 )
 async def listar_editais(
+    busca: Optional[str] = Query(None, description="Texto livre para buscar no objeto do edital"),
     cnae: Optional[str] = Query(None, description="Código CNAE do MEI"),
     valor_max: Optional[float] = Query(None, description="Valor máximo do contrato em R$"),
     regiao: Optional[str] = Query(None, description="Município ou estado"),
@@ -31,7 +32,7 @@ async def listar_editais(
     db: AsyncIOMotorDatabase = Depends(get_db),
     _: dict = Depends(get_usuario_atual),
 ):
-    return await buscar_editais(db, cnae, valor_max, regiao, pagina, por_pagina)
+    return await buscar_editais(db, busca, cnae, valor_max, regiao, pagina, por_pagina)
 
 
 @router.get(

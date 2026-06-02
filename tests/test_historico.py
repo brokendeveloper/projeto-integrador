@@ -53,9 +53,7 @@ def _make_mock_db(usuario):
 
 _PAYLOAD = {
     "edital_id": "abc123",
-    "numero_controle_pncp": "2024/0001",
-    "objeto": "Fornecimento de material de escritório",
-    "valor": 15000.0,
+    "valor_proposta": 15000.0,
     "status": "em_andamento",
 }
 
@@ -81,8 +79,7 @@ async def test_registrar_participacao():
     assert response.status_code == 201
     data = response.json()
     assert data["edital_id"] == "abc123"
-    assert data["usuario_id"] == str(usuario["_id"])
-    assert "registrado_em" in data
+    assert "data_participacao" in data
 
 
 @pytest.mark.asyncio
@@ -113,13 +110,13 @@ async def test_resumo_participacoes():
     app.dependency_overrides[get_usuario_atual] = lambda: usuario
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-        await client.post("/historico", json={**_PAYLOAD, "status": "venceu"})
-        await client.post("/historico", json={**_PAYLOAD, "status": "perdeu"})
+        await client.post("/historico", json={**_PAYLOAD, "status": "vencida"})
+        await client.post("/historico", json={**_PAYLOAD, "status": "perdida"})
         response = await client.get("/historico/resumo")
 
     app.dependency_overrides.clear()
     assert response.status_code == 200
     data = response.json()
     assert data["total"] == 2
-    assert data["venceu"] == 1
-    assert data["perdeu"] == 1
+    assert data["vencidas"] == 1
+    assert data["perdidas"] == 1

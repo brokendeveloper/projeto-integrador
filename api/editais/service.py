@@ -1,3 +1,4 @@
+import math
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from typing import Optional
 from bson import ObjectId
@@ -8,51 +9,63 @@ def _serializar_edital(doc: dict) -> dict:
     orgao = doc.get("orgaoEntidade", {})
     if isinstance(orgao, dict):
         nome_orgao = orgao.get("razaoSocial", orgao.get("nome", ""))
+        uf = orgao.get("ufSigla", orgao.get("uf", ""))
     else:
         nome_orgao = str(orgao)
+        uf = ""
 
     return {
         "id": str(doc["_id"]),
-        "numero_controle_pncp": doc.get("numeroControlePNCP", ""),
+        "numero_controle": doc.get("numeroControlePNCP", ""),
         "orgao": nome_orgao,
         "objeto": doc.get("objetoContrato", doc.get("objeto", "")),
-        "valor_inicial": float(valor) if valor else None,
+        "valor_estimado": float(valor) if valor else None,
         "data_publicacao": doc.get("dataPublicacaoPncp", doc.get("data_publicacao")),
         "data_encerramento": doc.get("dataVigenciaFim", doc.get("data_encerramento")),
+        "modalidade": doc.get("modalidadeNome", doc.get("modalidade")),
+        "uf": uf or doc.get("uf"),
         "favoravel_mei": float(valor) <= 80000.0 if valor else False,
     }
 
 
 async def buscar_editais(
     db: AsyncIOMotorDatabase,
+    busca: Optional[str] = None,
     cnae: Optional[str] = None,
     valor_max: Optional[float] = None,
     regiao: Optional[str] = None,
     pagina: int = 1,
     por_pagina: int = 20,
 ) -> dict:
-    filtros = {}
+    conditions = []
     if valor_max:
-        filtros["$or"] = [
+        conditions.append({"$or": [
             {"valorInicial": {"$lte": valor_max}},
             {"valor_inicial": {"$lte": valor_max}},
-        ]
+        ]})
     if regiao:
-        filtros["$or"] = filtros.get("$or", []) + [
+        conditions.append({"$or": [
             {"orgaoEntidade.municipio": {"$regex": regiao, "$options": "i"}},
             {"municipio": {"$regex": regiao, "$options": "i"}},
-        ]
+        ]})
+    if busca:
+        conditions.append({"$or": [
+            {"objetoContrato": {"$regex": busca, "$options": "i"}},
+            {"objeto": {"$regex": busca, "$options": "i"}},
+        ]})
 
+    filtros = {"$and": conditions} if conditions else {}
     skip = (pagina - 1) * por_pagina
     total = await db.contratos.count_documents(filtros)
     cursor = db.contratos.find(filtros).skip(skip).limit(por_pagina)
     documentos = await cursor.to_list(length=por_pagina)
+    paginas = math.ceil(total / por_pagina) if total > 0 else 1
 
     return {
         "total": total,
         "pagina": pagina,
-        "por_pagina": por_pagina,
-        "dados": [_serializar_edital(doc) for doc in documentos],
+        "paginas": paginas,
+        "items": [_serializar_edital(doc) for doc in documentos],
     }
 
 

@@ -3,14 +3,17 @@ from typing import Optional
 
 
 class AlertaCriar(BaseModel):
-    nome: str
+    nome: Optional[str] = None
     cnae: Optional[str] = None
     valor_max: Optional[float] = None
-    regiao: Optional[str] = None
+    uf: Optional[str] = None
     ativo: bool = True
 
 
-class AlertaResponse(AlertaCriar):
+class AlertaResponse(BaseModel):
     id: str
-    usuario_id: str
+    nome: Optional[str] = None
+    cnae: Optional[str] = None
+    valor_max: Optional[float] = None
+    uf: Optional[str] = None
     criado_em: str
