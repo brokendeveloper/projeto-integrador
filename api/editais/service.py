@@ -1,4 +1,5 @@
 import math
+import re
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from typing import Optional
 from bson import ObjectId
@@ -49,9 +50,10 @@ async def buscar_editais(
             {"municipio": {"$regex": regiao, "$options": "i"}},
         ]})
     if busca:
+        busca_safe = re.escape(busca.strip())
         conditions.append({"$or": [
-            {"objetoContrato": {"$regex": busca, "$options": "i"}},
-            {"objeto": {"$regex": busca, "$options": "i"}},
+            {"objetoContrato": {"$regex": busca_safe, "$options": "i"}},
+            {"objeto": {"$regex": busca_safe, "$options": "i"}},
         ]})
 
     filtros = {"$and": conditions} if conditions else {}

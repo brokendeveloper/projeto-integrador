@@ -8,6 +8,7 @@ export const api = axios.create({
   timeout: 10000,
 });
 
+// Injeta o token JWT em todas as requisições
 api.interceptors.request.use(async (config) => {
   const token = await SecureStore.getItemAsync(TOKEN_KEY);
   if (token) {
@@ -16,15 +17,7 @@ api.interceptors.request.use(async (config) => {
   return config;
 });
 
-api.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    if (error.response?.status === 401) {
-      await SecureStore.deleteItemAsync(TOKEN_KEY);
-    }
-    return Promise.reject(error);
-  }
-);
+// O tratamento de 401 fica no AuthContext para poder atualizar o estado de auth
 
 export const salvarToken = (token: string) =>
   SecureStore.setItemAsync(TOKEN_KEY, token);

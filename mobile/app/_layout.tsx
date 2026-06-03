@@ -1,14 +1,14 @@
 import { Slot, useSegments, useRouter } from "expo-router";
 import { useEffect } from "react";
-import { useAuth } from "../hooks/useAuth";
+import { AuthProvider, useAuth } from "../context/AuthContext";
 
-export default function RootLayout() {
+function RootNavigation() {
   const { autenticado } = useAuth();
   const segments = useSegments();
   const router = useRouter();
 
   useEffect(() => {
-    if (autenticado === null) return;
+    if (autenticado === null) return; // ainda carregando
 
     const inAuthGroup = segments[0] === "(auth)";
 
@@ -20,4 +20,12 @@ export default function RootLayout() {
   }, [autenticado, segments]);
 
   return <Slot />;
+}
+
+export default function RootLayout() {
+  return (
+    <AuthProvider>
+      <RootNavigation />
+    </AuthProvider>
+  );
 }
