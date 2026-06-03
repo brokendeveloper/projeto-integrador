@@ -18,6 +18,7 @@ from api.analytics.router import router as analytics_router
 from api.mcp.router import router as mcp_router
 from api.chat.router import router as chat_router
 from api.perfil.router import router as perfil_router
+from api.config.router import router as config_router
 from api.middleware import configurar_middleware, SecurityHeadersMiddleware
 
 
@@ -181,6 +182,7 @@ app.include_router(analytics_router)
 app.include_router(mcp_router)
 app.include_router(chat_router)
 app.include_router(perfil_router)
+app.include_router(config_router)
 
 
 @app.get("/health", include_in_schema=False)
