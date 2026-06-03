@@ -9,9 +9,10 @@ import {
   Alert,
   ActivityIndicator,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "expo-router";
 import { api } from "../../services/api";
-import { Colors } from "../../constants/theme";
+import { Colors, Radius, Spacing, Shadow } from "../../constants/theme";
 
 interface Item {
   id: string;
@@ -65,57 +66,110 @@ export default function ChecklistScreen() {
   }
 
   const progresso = checklist?.progresso ?? 0;
+  const concluidos = checklist?.items.filter((i) => i.concluido).length ?? 0;
+  const total = checklist?.items.length ?? 0;
 
   function renderItem({ item }: { item: Item }) {
     const bloqueado = item.plano_necessario !== "free" && PLANO_ATUAL === "free";
 
     return (
       <TouchableOpacity
-        style={[styles.item, bloqueado && styles.itemBloqueado]}
+        style={[styles.item, item.concluido && styles.itemConcluido, bloqueado && styles.itemBloqueado]}
         onPress={() => !bloqueado && toggleItem(item.id, item.concluido)}
         disabled={bloqueado}
+        activeOpacity={0.7}
       >
-        <View style={styles.itemEsquerda}>
-          <Text style={styles.checkbox}>{bloqueado ? "🔒" : item.concluido ? "✅" : "⬜"}</Text>
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.itemTexto, item.concluido && styles.itemConcluido]}>
-              {item.descricao}
-            </Text>
-            <Text style={styles.categoria}>{item.categoria}</Text>
+        <View style={styles.checkArea}>
+          {bloqueado ? (
+            <View style={[styles.checkBox, styles.checkBoxBloqueado]}>
+              <Ionicons name="lock-closed" size={12} color={Colors.premium} />
+            </View>
+          ) : item.concluido ? (
+            <View style={[styles.checkBox, styles.checkBoxAtivo]}>
+              <Ionicons name="checkmark" size={14} color={Colors.white} />
+            </View>
+          ) : (
+            <View style={[styles.checkBox, styles.checkBoxVazio]} />
+          )}
+        </View>
+
+        <View style={styles.itemConteudo}>
+          <Text
+            style={[
+              styles.itemTexto,
+              item.concluido && styles.itemTextoRiscado,
+              bloqueado && styles.itemTextoBloqueado,
+            ]}
+            numberOfLines={2}
+          >
+            {item.descricao}
+          </Text>
+          <View style={styles.itemMeta}>
+            <Text style={styles.categoriaTexto}>{item.categoria}</Text>
+            {item.obrigatorio && (
+              <View style={styles.obrigatorioTag}>
+                <Text style={styles.obrigatorioTexto}>Obrigatório</Text>
+              </View>
+            )}
+            {bloqueado && (
+              <View style={styles.premiumTag}>
+                <Text style={styles.premiumTexto}>Premium</Text>
+              </View>
+            )}
           </View>
         </View>
-        {item.obrigatorio && <Text style={styles.obrigatorio}>Obrigatório</Text>}
-        {bloqueado && <Text style={styles.premium}>Premium</Text>}
       </TouchableOpacity>
     );
   }
 
   return (
     <View style={styles.container}>
-      <View style={styles.busca}>
-        <TextInput
-          style={styles.input}
-          placeholder="ID do edital"
-          value={editalId}
-          onChangeText={setEditalId}
-          autoCapitalize="none"
-          placeholderTextColor={Colors.textSecondary}
-        />
-        <TouchableOpacity style={styles.botao} onPress={carregarChecklist}>
-          <Text style={styles.botaoTexto}>Carregar</Text>
+      {/* Search */}
+      <View style={styles.searchArea}>
+        <View style={styles.searchWrapper}>
+          <Ionicons name="search-outline" size={16} color={Colors.textLight} style={{ marginRight: 6 }} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="ID do edital"
+            value={editalId}
+            onChangeText={setEditalId}
+            autoCapitalize="none"
+            placeholderTextColor={Colors.textLight}
+            onSubmitEditing={carregarChecklist}
+            returnKeyType="search"
+          />
+        </View>
+        <TouchableOpacity style={styles.botaoCarregar} onPress={carregarChecklist} activeOpacity={0.8}>
+          <Text style={styles.botaoTexto}>Ver</Text>
         </TouchableOpacity>
       </View>
 
-      {carregando && <ActivityIndicator style={{ margin: 24 }} color={Colors.primary} />}
+      {carregando && (
+        <ActivityIndicator style={{ margin: 32 }} color={Colors.primary} size="large" />
+      )}
 
       {checklist && !carregando && (
         <>
-          <View style={styles.progressoContainer}>
-            <Text style={styles.progressoTexto}>Progresso: {progresso}%</Text>
-            <View style={styles.barraFundo}>
-              <View style={[styles.barra, { width: `${progresso}%` as any }]} />
+          {/* Progress card */}
+          <View style={styles.progressoCard}>
+            <View style={styles.progressoHeader}>
+              <Text style={styles.progressoTitulo}>Progresso da habilitação</Text>
+              <Text style={styles.progressoPorcentagem}>{progresso}%</Text>
             </View>
+            <View style={styles.barraFundo}>
+              <View
+                style={[
+                  styles.barraPreenchida,
+                  { width: `${progresso}%` as any },
+                  progresso === 100 && styles.barraCompleta,
+                ]}
+              />
+            </View>
+            <Text style={styles.progressoSub}>
+              {concluidos} de {total} itens concluídos
+            </Text>
           </View>
+
           <FlatList
             data={checklist.items}
             keyExtractor={(item) => item.id}
@@ -126,41 +180,214 @@ export default function ChecklistScreen() {
       )}
 
       {!checklist && !carregando && (
-        <Text style={styles.instrucao}>Informe o ID do edital para ver o checklist de habilitação.</Text>
+        <View style={styles.instrucaoContainer}>
+          <Ionicons name="checkbox-outline" size={52} color={Colors.border} />
+          <Text style={styles.instrucaoTitulo}>Checklist de habilitação</Text>
+          <Text style={styles.instrucaoTexto}>
+            Informe o ID do edital para verificar os requisitos de habilitação da Lei 14.133/2021.
+          </Text>
+        </View>
       )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
-  busca: {
-    flexDirection: "row", padding: 12, gap: 8,
-    backgroundColor: Colors.card, borderBottomWidth: 1, borderBottomColor: Colors.border,
+  container: {
+    flex: 1,
+    backgroundColor: Colors.background,
   },
-  input: {
-    flex: 1, borderWidth: 1, borderColor: Colors.border, borderRadius: 8,
-    padding: 10, fontSize: 14, color: Colors.text,
+  searchArea: {
+    flexDirection: "row",
+    gap: Spacing.sm,
+    padding: Spacing.md,
+    backgroundColor: Colors.white,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
   },
-  botao: { backgroundColor: Colors.primary, borderRadius: 8, padding: 10, justifyContent: "center" },
-  botaoTexto: { color: "#fff", fontWeight: "700", fontSize: 13 },
-  progressoContainer: { padding: 16, backgroundColor: Colors.card, marginBottom: 8 },
-  progressoTexto: { fontSize: 14, fontWeight: "600", color: Colors.text, marginBottom: 6 },
-  barraFundo: { height: 8, backgroundColor: Colors.border, borderRadius: 4, overflow: "hidden" },
-  barra: { height: 8, backgroundColor: Colors.secondary, borderRadius: 4 },
-  lista: { padding: 12, paddingBottom: 32 },
+  searchWrapper: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: Colors.surface,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    borderRadius: Radius.md,
+    paddingHorizontal: Spacing.sm + 4,
+    height: 44,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    color: Colors.text,
+  },
+  botaoCarregar: {
+    backgroundColor: Colors.primary,
+    borderRadius: Radius.md,
+    paddingHorizontal: Spacing.md,
+    justifyContent: "center",
+    alignItems: "center",
+    height: 44,
+  },
+  botaoTexto: {
+    color: Colors.white,
+    fontWeight: "700",
+    fontSize: 14,
+  },
+  progressoCard: {
+    margin: Spacing.md,
+    backgroundColor: Colors.white,
+    borderRadius: Radius.lg,
+    padding: Spacing.md,
+    ...Shadow.sm,
+  },
+  progressoHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: Spacing.sm,
+  },
+  progressoTitulo: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: Colors.text,
+  },
+  progressoPorcentagem: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: Colors.primary,
+  },
+  barraFundo: {
+    height: 8,
+    backgroundColor: Colors.borderLight,
+    borderRadius: 4,
+    overflow: "hidden",
+    marginBottom: Spacing.sm,
+  },
+  barraPreenchida: {
+    height: 8,
+    backgroundColor: Colors.primary,
+    borderRadius: 4,
+  },
+  barraCompleta: {
+    backgroundColor: Colors.success,
+  },
+  progressoSub: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+  },
+  lista: {
+    padding: Spacing.md,
+    paddingBottom: 40,
+  },
   item: {
-    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    backgroundColor: Colors.card, borderRadius: 8, padding: 12, marginBottom: 8,
-    borderWidth: 1, borderColor: Colors.border,
+    flexDirection: "row",
+    backgroundColor: Colors.white,
+    borderRadius: Radius.md,
+    padding: Spacing.md,
+    marginBottom: Spacing.sm,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...Shadow.sm,
   },
-  itemBloqueado: { opacity: 0.6, backgroundColor: "#F5F5F5" },
-  itemEsquerda: { flexDirection: "row", alignItems: "flex-start", flex: 1, gap: 8 },
-  checkbox: { fontSize: 18, marginTop: 1 },
-  itemTexto: { fontSize: 13, color: Colors.text, flexWrap: "wrap" },
-  itemConcluido: { textDecorationLine: "line-through", color: Colors.textSecondary },
-  categoria: { fontSize: 11, color: Colors.textSecondary, marginTop: 2 },
-  obrigatorio: { fontSize: 10, color: Colors.danger, fontWeight: "700" },
-  premium: { fontSize: 10, color: Colors.premium, fontWeight: "700" },
-  instrucao: { textAlign: "center", color: Colors.textSecondary, marginTop: 48, fontSize: 15, padding: 24 },
+  itemConcluido: {
+    backgroundColor: Colors.surface,
+    borderColor: Colors.success + "40",
+  },
+  itemBloqueado: {
+    opacity: 0.6,
+  },
+  checkArea: {
+    marginRight: Spacing.sm,
+    marginTop: 1,
+  },
+  checkBox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  checkBoxVazio: {
+    borderWidth: 2,
+    borderColor: Colors.border,
+  },
+  checkBoxAtivo: {
+    backgroundColor: Colors.success,
+    borderWidth: 0,
+  },
+  checkBoxBloqueado: {
+    backgroundColor: Colors.premiumLight,
+    borderWidth: 0,
+  },
+  itemConteudo: {
+    flex: 1,
+  },
+  itemTexto: {
+    fontSize: 13,
+    color: Colors.text,
+    lineHeight: 18,
+    marginBottom: 4,
+  },
+  itemTextoRiscado: {
+    textDecorationLine: "line-through",
+    color: Colors.textSecondary,
+  },
+  itemTextoBloqueado: {
+    color: Colors.textSecondary,
+  },
+  itemMeta: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.xs,
+    flexWrap: "wrap",
+  },
+  categoriaTexto: {
+    fontSize: 11,
+    color: Colors.textLight,
+    fontWeight: "500",
+  },
+  obrigatorioTag: {
+    backgroundColor: Colors.dangerLight,
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+  },
+  obrigatorioTexto: {
+    fontSize: 10,
+    color: Colors.danger,
+    fontWeight: "700",
+  },
+  premiumTag: {
+    backgroundColor: Colors.premiumLight,
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+  },
+  premiumTexto: {
+    fontSize: 10,
+    color: Colors.premium,
+    fontWeight: "700",
+  },
+  instrucaoContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: Spacing.xxl,
+    paddingBottom: 60,
+  },
+  instrucaoTitulo: {
+    marginTop: Spacing.md,
+    fontSize: 17,
+    fontWeight: "700",
+    color: Colors.text,
+    textAlign: "center",
+  },
+  instrucaoTexto: {
+    marginTop: Spacing.sm,
+    fontSize: 14,
+    color: Colors.textSecondary,
+    textAlign: "center",
+    lineHeight: 20,
+  },
 });

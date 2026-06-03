@@ -1,29 +1,50 @@
 import { Tabs } from "expo-router";
-import { Text } from "react-native";
+import { TouchableOpacity } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useAuth } from "../../hooks/useAuth";
 import { Colors } from "../../constants/theme";
 
-function IconTab({ emoji }: { emoji: string }) {
-  return <Text style={{ fontSize: 20 }}>{emoji}</Text>;
-}
-
 export default function TabsLayout() {
+  const { logout } = useAuth();
+
   return (
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: Colors.primary,
-        tabBarInactiveTintColor: Colors.textSecondary,
-        tabBarStyle: { borderTopColor: Colors.border },
-        headerStyle: { backgroundColor: Colors.primary },
-        headerTintColor: "#fff",
-        headerTitleStyle: { fontWeight: "700" },
+        tabBarInactiveTintColor: Colors.textLight,
+        tabBarStyle: {
+          backgroundColor: Colors.white,
+          borderTopColor: Colors.border,
+          borderTopWidth: 1,
+          height: 60,
+          paddingBottom: 8,
+          paddingTop: 4,
+        },
+        tabBarLabelStyle: { fontSize: 11, fontWeight: "600" },
+        headerStyle: { backgroundColor: Colors.primaryDark },
+        headerTintColor: Colors.white,
+        headerTitleStyle: { fontWeight: "700", fontSize: 17 },
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
           title: "Editais",
-          tabBarIcon: ({ focused }) => (
-            <IconTab emoji={focused ? "📋" : "📄"} />
+          tabBarIcon: ({ focused, color }) => (
+            <Ionicons
+              name={focused ? "document-text" : "document-text-outline"}
+              size={22}
+              color={color}
+            />
+          ),
+          headerRight: () => (
+            <TouchableOpacity
+              onPress={logout}
+              style={{ marginRight: 16, padding: 4 }}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons name="log-out-outline" size={22} color={Colors.white} />
+            </TouchableOpacity>
           ),
         }}
       />
@@ -31,8 +52,12 @@ export default function TabsLayout() {
         name="checklist"
         options={{
           title: "Checklist",
-          tabBarIcon: ({ focused }) => (
-            <IconTab emoji={focused ? "✅" : "☑️"} />
+          tabBarIcon: ({ focused, color }) => (
+            <Ionicons
+              name={focused ? "checkbox" : "checkbox-outline"}
+              size={22}
+              color={color}
+            />
           ),
         }}
       />
@@ -40,8 +65,12 @@ export default function TabsLayout() {
         name="documentos"
         options={{
           title: "Documentos",
-          tabBarIcon: ({ focused }) => (
-            <IconTab emoji={focused ? "📁" : "🗂️"} />
+          tabBarIcon: ({ focused, color }) => (
+            <Ionicons
+              name={focused ? "folder" : "folder-outline"}
+              size={22}
+              color={color}
+            />
           ),
         }}
       />
@@ -49,8 +78,12 @@ export default function TabsLayout() {
         name="alertas"
         options={{
           title: "Alertas",
-          tabBarIcon: ({ focused }) => (
-            <IconTab emoji={focused ? "🔔" : "🔕"} />
+          tabBarIcon: ({ focused, color }) => (
+            <Ionicons
+              name={focused ? "notifications" : "notifications-outline"}
+              size={22}
+              color={color}
+            />
           ),
         }}
       />
@@ -58,8 +91,12 @@ export default function TabsLayout() {
         name="historico"
         options={{
           title: "Histórico",
-          tabBarIcon: ({ focused }) => (
-            <IconTab emoji={focused ? "📊" : "📈"} />
+          tabBarIcon: ({ focused, color }) => (
+            <Ionicons
+              name={focused ? "stats-chart" : "stats-chart-outline"}
+              size={22}
+              color={color}
+            />
           ),
         }}
       />

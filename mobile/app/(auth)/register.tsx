@@ -9,11 +9,16 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  Dimensions,
+  StatusBar,
   ScrollView,
 } from "react-native";
 import { Link } from "expo-router";
 import { useAuth } from "../../hooks/useAuth";
-import { Colors } from "../../constants/theme";
+import { Colors, Radius, Spacing } from "../../constants/theme";
+
+const { height: SCREEN_HEIGHT } = Dimensions.get("window");
+const HERO_HEIGHT = Math.round(SCREEN_HEIGHT * 0.32);
 
 function aplicarMascaraCNPJ(valor: string): string {
   const numeros = valor.replace(/\D/g, "").slice(0, 14);
@@ -38,11 +43,11 @@ export default function RegisterScreen() {
 
   async function handleRegistrar() {
     if (!nome || !email || !cnpj || !senha) {
-      Alert.alert("Erro", "Preencha todos os campos.");
+      Alert.alert("Campos obrigatórios", "Preencha todos os campos.");
       return;
     }
     if (senha.length < 8) {
-      Alert.alert("Erro", "A senha deve ter pelo menos 8 caracteres.");
+      Alert.alert("Senha fraca", "A senha deve ter pelo menos 8 caracteres.");
       return;
     }
     setCarregando(true);
@@ -59,65 +64,92 @@ export default function RegisterScreen() {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-        <View style={styles.card}>
-          <Text style={styles.titulo}>LicitaME</Text>
-          <Text style={styles.subtitulo}>Crie sua conta de MEI</Text>
+      <StatusBar barStyle="light-content" backgroundColor={Colors.primaryDark} />
 
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ flexGrow: 1 }}
+        keyboardShouldPersistTaps="handled"
+        bounces={false}
+      >
+        {/* Hero */}
+        <View style={[styles.hero, { minHeight: HERO_HEIGHT }]}>
+          <View style={styles.circle1} />
+          <View style={styles.circle2} />
+          <View style={styles.heroContent}>
+            <Text style={styles.brand}>LicitaME</Text>
+            <Text style={styles.tagline}>Crie sua conta de MEI gratuita</Text>
+          </View>
+        </View>
+
+        {/* Form */}
+        <View style={styles.form}>
+          <Text style={styles.titulo}>Criar conta</Text>
+
+          <Text style={styles.label}>Nome completo</Text>
           <TextInput
             style={styles.input}
-            placeholder="Nome completo"
+            placeholder="Seu nome"
             value={nome}
             onChangeText={setNome}
             autoCapitalize="words"
-            placeholderTextColor={Colors.textSecondary}
+            autoComplete="name"
+            placeholderTextColor={Colors.textLight}
           />
 
+          <Text style={styles.label}>E-mail</Text>
           <TextInput
             style={styles.input}
-            placeholder="E-mail"
+            placeholder="seu@email.com"
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
             autoCapitalize="none"
-            placeholderTextColor={Colors.textSecondary}
+            autoComplete="email"
+            placeholderTextColor={Colors.textLight}
           />
 
+          <Text style={styles.label}>CNPJ</Text>
           <TextInput
             style={styles.input}
-            placeholder="CNPJ (00.000.000/0000-00)"
+            placeholder="00.000.000/0000-00"
             value={cnpj}
             onChangeText={handleCnpjChange}
             keyboardType="numeric"
-            placeholderTextColor={Colors.textSecondary}
+            placeholderTextColor={Colors.textLight}
           />
 
+          <Text style={styles.label}>Senha</Text>
           <TextInput
             style={styles.input}
-            placeholder="Senha (mín. 8 caracteres)"
+            placeholder="Mínimo 8 caracteres"
             value={senha}
             onChangeText={setSenha}
             secureTextEntry
-            placeholderTextColor={Colors.textSecondary}
+            placeholderTextColor={Colors.textLight}
           />
 
           <TouchableOpacity
             style={[styles.botao, carregando && styles.botaoDesabilitado]}
             onPress={handleRegistrar}
             disabled={carregando}
+            activeOpacity={0.85}
           >
             {carregando ? (
-              <ActivityIndicator color="#fff" />
+              <ActivityIndicator color={Colors.white} />
             ) : (
-              <Text style={styles.botaoTexto}>Cadastrar</Text>
+              <Text style={styles.botaoTexto}>Criar conta grátis</Text>
             )}
           </TouchableOpacity>
 
           <Link href="/(auth)/login" asChild>
-            <TouchableOpacity style={styles.linkContainer}>
-              <Text style={styles.link}>Já tem conta? Entre aqui</Text>
+            <TouchableOpacity style={styles.linkContainer} activeOpacity={0.7}>
+              <Text style={styles.linkTexto}>
+                Já tem conta?{" "}
+                <Text style={styles.linkDestaque}>Entre aqui</Text>
+              </Text>
             </TouchableOpacity>
           </Link>
         </View>
@@ -129,65 +161,114 @@ export default function RegisterScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: Colors.primaryDark,
   },
-  scroll: {
-    flexGrow: 1,
-    justifyContent: "center",
-    padding: 24,
+  hero: {
+    backgroundColor: Colors.primaryDark,
+    justifyContent: "flex-end",
+    paddingBottom: 36,
+    overflow: "hidden",
   },
-  card: {
-    backgroundColor: Colors.card,
-    borderRadius: 12,
-    padding: 24,
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
+  circle1: {
+    position: "absolute",
+    width: 260,
+    height: 260,
+    borderRadius: 130,
+    backgroundColor: "rgba(255,255,255,0.05)",
+    top: -70,
+    right: -60,
+  },
+  circle2: {
+    position: "absolute",
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    backgroundColor: "rgba(59,130,246,0.2)",
+    bottom: 30,
+    right: 20,
+  },
+  heroContent: {
+    paddingHorizontal: Spacing.xl,
+  },
+  brand: {
+    fontSize: 38,
+    fontWeight: "800",
+    color: Colors.white,
+    letterSpacing: -1,
+  },
+  tagline: {
+    fontSize: 14,
+    color: "rgba(255,255,255,0.60)",
+    marginTop: 6,
+    fontWeight: "400",
+  },
+  form: {
+    flex: 1,
+    backgroundColor: Colors.white,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: Spacing.xl,
+    paddingTop: 28,
+    paddingBottom: Spacing.xxl,
   },
   titulo: {
-    fontSize: 26,
+    fontSize: 20,
     fontWeight: "700",
-    color: Colors.primary,
-    textAlign: "center",
-    marginBottom: 4,
+    color: Colors.text,
+    marginBottom: 20,
   },
-  subtitulo: {
-    fontSize: 15,
+  label: {
+    fontSize: 13,
+    fontWeight: "600",
     color: Colors.textSecondary,
-    textAlign: "center",
-    marginBottom: 24,
+    marginBottom: 6,
+    letterSpacing: 0.1,
   },
   input: {
-    borderWidth: 1,
+    height: 50,
+    borderWidth: 1.5,
     borderColor: Colors.border,
-    borderRadius: 8,
-    padding: 12,
+    borderRadius: Radius.md,
+    paddingHorizontal: Spacing.md,
     fontSize: 15,
     color: Colors.text,
+    backgroundColor: Colors.surface,
     marginBottom: 14,
   },
   botao: {
+    height: 52,
     backgroundColor: Colors.primary,
-    borderRadius: 8,
-    padding: 14,
+    borderRadius: Radius.md,
     alignItems: "center",
-    marginTop: 4,
+    justifyContent: "center",
+    marginTop: 8,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   botaoDesabilitado: {
-    opacity: 0.6,
+    opacity: 0.65,
+    shadowOpacity: 0,
+    elevation: 0,
   },
   botaoTexto: {
-    color: "#fff",
+    color: Colors.white,
     fontWeight: "700",
     fontSize: 16,
+    letterSpacing: 0.3,
   },
   linkContainer: {
-    marginTop: 18,
+    marginTop: 20,
     alignItems: "center",
   },
-  link: {
-    color: Colors.primary,
+  linkTexto: {
     fontSize: 14,
+    color: Colors.textSecondary,
+  },
+  linkDestaque: {
+    color: Colors.primary,
+    fontWeight: "700",
   },
 });

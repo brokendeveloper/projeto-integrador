@@ -10,8 +10,9 @@ import {
   Alert,
   RefreshControl,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { api } from "../../services/api";
-import { Colors } from "../../constants/theme";
+import { Colors, Radius, Spacing, Shadow } from "../../constants/theme";
 import { useFocusEffect } from "expo-router";
 
 interface Edital {
@@ -23,6 +24,7 @@ interface Edital {
   data_encerramento: string | null;
   modalidade: string;
   uf: string;
+  favoravel_mei: boolean;
 }
 
 interface Pagina {
@@ -35,7 +37,7 @@ interface Pagina {
 const MEI_LIMITE = 80000;
 
 function formatarMoeda(valor: number | null): string {
-  if (valor === null) return "Valor não informado";
+  if (valor === null) return "Não informado";
   return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
@@ -46,23 +48,23 @@ function formatarData(data: string | null): string {
 
 export default function EditaisScreen() {
   const [busca, setBusca] = useState("");
-  const [valorMax, setValorMax] = useState("");
   const [editais, setEditais] = useState<Edital[]>([]);
   const [carregando, setCarregando] = useState(false);
   const [pagina, setPagina] = useState(1);
   const [totalPaginas, setTotalPaginas] = useState(1);
+  const [total, setTotal] = useState(0);
 
   async function buscarEditais(pag = 1, reset = false) {
     setCarregando(true);
     try {
-      const params: Record<string, any> = { pagina: pag, por_pagina: 10 };
+      const params: Record<string, any> = { pagina: pag, por_pagina: 15 };
       if (busca.trim()) params.busca = busca.trim();
-      if (valorMax.trim()) params.valor_max = Number(valorMax.replace(/\D/g, ""));
 
       const { data }: { data: Pagina } = await api.get("/editais", { params });
       setEditais(reset ? data.items : [...editais, ...data.items]);
       setPagina(data.pagina);
       setTotalPaginas(data.paginas);
+      setTotal(data.total);
     } catch {
       Alert.alert("Erro", "Não foi possível carregar os editais.");
     } finally {
@@ -87,65 +89,122 @@ export default function EditaisScreen() {
   }
 
   function renderEdital({ item }: { item: Edital }) {
-    const favoravel = item.valor_estimado !== null && item.valor_estimado <= MEI_LIMITE;
+    const favoravel =
+      item.favoravel_mei ||
+      (item.valor_estimado !== null && item.valor_estimado <= MEI_LIMITE);
+
     return (
       <View style={[styles.card, favoravel && styles.cardFavoravel]}>
         {favoravel && (
           <View style={styles.badge}>
-            <Text style={styles.badgeTexto}>✓ Favorável para MEI</Text>
+            <Ionicons name="checkmark-circle" size={12} color={Colors.success} />
+            <Text style={styles.badgeTexto}> Favorável para MEI</Text>
           </View>
         )}
-        <Text style={styles.objeto} numberOfLines={2}>{item.objeto}</Text>
-        <Text style={styles.orgao}>{item.orgao} · {item.uf}</Text>
-        <View style={styles.rodape}>
-          <Text style={styles.valor}>{formatarMoeda(item.valor_estimado)}</Text>
-          <Text style={styles.data}>Enc.: {formatarData(item.data_encerramento)}</Text>
+
+        <Text style={styles.objeto} numberOfLines={2}>
+          {item.objeto}
+        </Text>
+
+        <View style={styles.orgaoRow}>
+          <Ionicons name="business-outline" size={12} color={Colors.textLight} />
+          <Text style={styles.orgao} numberOfLines={1}>
+            {" "}{item.orgao}
+            {item.uf ? ` · ${item.uf}` : ""}
+          </Text>
         </View>
-        <Text style={styles.modalidade}>{item.modalidade}</Text>
+
+        <View style={styles.cardFooter}>
+          <View style={styles.valorContainer}>
+            <Text style={styles.valorLabel}>Valor estimado</Text>
+            <Text style={[styles.valor, favoravel && styles.valorFavoravel]}>
+              {formatarMoeda(item.valor_estimado)}
+            </Text>
+          </View>
+          <View style={styles.dataContainer}>
+            <Text style={styles.dataLabel}>Encerra</Text>
+            <Text style={styles.data}>{formatarData(item.data_encerramento)}</Text>
+          </View>
+        </View>
+
+        {item.modalidade ? (
+          <View style={styles.modalidadeBadge}>
+            <Text style={styles.modalidadeTexto}>{item.modalidade}</Text>
+          </View>
+        ) : null}
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <View style={styles.filtros}>
-        <TextInput
-          style={styles.inputBusca}
-          placeholder="Buscar por objeto ou CNAE..."
-          value={busca}
-          onChangeText={setBusca}
-          onSubmitEditing={handleBuscar}
-          placeholderTextColor={Colors.textSecondary}
-          returnKeyType="search"
-        />
-        <TextInput
-          style={styles.inputValor}
-          placeholder="Valor máx (R$)"
-          value={valorMax}
-          onChangeText={setValorMax}
-          keyboardType="numeric"
-          placeholderTextColor={Colors.textSecondary}
-        />
-        <TouchableOpacity style={styles.botaoBuscar} onPress={handleBuscar}>
-          <Text style={styles.botaoBuscarTexto}>Buscar</Text>
+      {/* Search bar */}
+      <View style={styles.searchContainer}>
+        <View style={styles.searchWrapper}>
+          <Ionicons
+            name="search-outline"
+            size={18}
+            color={Colors.textLight}
+            style={styles.searchIcon}
+          />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Buscar por objeto ou palavra-chave..."
+            value={busca}
+            onChangeText={setBusca}
+            onSubmitEditing={handleBuscar}
+            placeholderTextColor={Colors.textLight}
+            returnKeyType="search"
+          />
+          {busca.length > 0 && (
+            <TouchableOpacity
+              onPress={() => {
+                setBusca("");
+                buscarEditais(1, true);
+              }}
+            >
+              <Ionicons name="close-circle" size={18} color={Colors.textLight} />
+            </TouchableOpacity>
+          )}
+        </View>
+        <TouchableOpacity style={styles.searchButton} onPress={handleBuscar} activeOpacity={0.8}>
+          <Text style={styles.searchButtonText}>Buscar</Text>
         </TouchableOpacity>
       </View>
+
+      {total > 0 && (
+        <View style={styles.resultInfo}>
+          <Text style={styles.resultText}>
+            {total.toLocaleString("pt-BR")} editais encontrados
+          </Text>
+        </View>
+      )}
 
       <FlatList
         data={editais}
         keyExtractor={(item) => item.id}
         renderItem={renderEdital}
         onEndReached={handleProximaPagina}
-        onEndReachedThreshold={0.3}
+        onEndReachedThreshold={0.4}
         refreshControl={
-          <RefreshControl refreshing={carregando && pagina === 1} onRefresh={() => buscarEditais(1, true)} />
+          <RefreshControl
+            refreshing={carregando && pagina === 1}
+            onRefresh={() => buscarEditais(1, true)}
+            tintColor={Colors.primary}
+          />
         }
         ListFooterComponent={
-          carregando && pagina > 1 ? <ActivityIndicator style={{ margin: 16 }} color={Colors.primary} /> : null
+          carregando && pagina > 1 ? (
+            <ActivityIndicator style={{ margin: 20 }} color={Colors.primary} />
+          ) : null
         }
         ListEmptyComponent={
           !carregando ? (
-            <Text style={styles.vazio}>Nenhum edital encontrado.</Text>
+            <View style={styles.vazioContainer}>
+              <Ionicons name="document-text-outline" size={48} color={Colors.border} />
+              <Text style={styles.vazioTexto}>Nenhum edital encontrado.</Text>
+              <Text style={styles.vazioSub}>Tente ajustar os filtros de busca.</Text>
+            </View>
           ) : null
         }
         contentContainerStyle={styles.lista}
@@ -155,38 +214,180 @@ export default function EditaisScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
-  filtros: { padding: 12, backgroundColor: Colors.card, borderBottomWidth: 1, borderBottomColor: Colors.border },
-  inputBusca: {
-    borderWidth: 1, borderColor: Colors.border, borderRadius: 8,
-    padding: 10, fontSize: 14, color: Colors.text, marginBottom: 8,
+  container: {
+    flex: 1,
+    backgroundColor: Colors.background,
   },
-  inputValor: {
-    borderWidth: 1, borderColor: Colors.border, borderRadius: 8,
-    padding: 10, fontSize: 14, color: Colors.text, marginBottom: 8,
+  searchContainer: {
+    flexDirection: "row",
+    gap: Spacing.sm,
+    padding: Spacing.md,
+    backgroundColor: Colors.white,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
   },
-  botaoBuscar: {
-    backgroundColor: Colors.primary, borderRadius: 8,
-    padding: 12, alignItems: "center",
+  searchWrapper: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: Colors.surface,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    borderRadius: Radius.md,
+    paddingHorizontal: Spacing.sm + 4,
+    height: 44,
   },
-  botaoBuscarTexto: { color: "#fff", fontWeight: "700", fontSize: 14 },
-  lista: { padding: 12, paddingBottom: 32 },
+  searchIcon: {
+    marginRight: 6,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    color: Colors.text,
+  },
+  searchButton: {
+    backgroundColor: Colors.primary,
+    borderRadius: Radius.md,
+    paddingHorizontal: Spacing.md,
+    justifyContent: "center",
+    alignItems: "center",
+    height: 44,
+  },
+  searchButtonText: {
+    color: Colors.white,
+    fontWeight: "700",
+    fontSize: 14,
+  },
+  resultInfo: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    backgroundColor: Colors.white,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.borderLight,
+  },
+  resultText: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+    fontWeight: "500",
+  },
+  lista: {
+    padding: Spacing.md,
+    paddingBottom: 40,
+  },
   card: {
-    backgroundColor: Colors.card, borderRadius: 10, padding: 14,
-    marginBottom: 12, borderWidth: 1, borderColor: Colors.border,
-    shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 4, elevation: 2,
+    backgroundColor: Colors.white,
+    borderRadius: Radius.lg,
+    padding: Spacing.md,
+    marginBottom: Spacing.md,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...Shadow.sm,
   },
-  cardFavoravel: { borderColor: Colors.secondary, borderWidth: 1.5 },
+  cardFavoravel: {
+    borderColor: Colors.success,
+    borderWidth: 1.5,
+  },
   badge: {
-    backgroundColor: "#E6F4EA", borderRadius: 4, paddingHorizontal: 8,
-    paddingVertical: 2, alignSelf: "flex-start", marginBottom: 6,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: Colors.successLight,
+    borderRadius: Radius.sm,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 3,
+    alignSelf: "flex-start",
+    marginBottom: Spacing.sm,
   },
-  badgeTexto: { color: Colors.secondary, fontSize: 11, fontWeight: "700" },
-  objeto: { fontSize: 14, fontWeight: "600", color: Colors.text, marginBottom: 4 },
-  orgao: { fontSize: 12, color: Colors.textSecondary, marginBottom: 8 },
-  rodape: { flexDirection: "row", justifyContent: "space-between", marginBottom: 4 },
-  valor: { fontSize: 13, fontWeight: "700", color: Colors.primary },
-  data: { fontSize: 12, color: Colors.textSecondary },
-  modalidade: { fontSize: 11, color: Colors.textSecondary },
-  vazio: { textAlign: "center", color: Colors.textSecondary, marginTop: 48, fontSize: 15 },
+  badgeTexto: {
+    color: Colors.success,
+    fontSize: 11,
+    fontWeight: "700",
+  },
+  objeto: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: Colors.text,
+    lineHeight: 20,
+    marginBottom: Spacing.xs,
+  },
+  orgaoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: Spacing.md,
+  },
+  orgao: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+    flex: 1,
+  },
+  cardFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-end",
+    paddingTop: Spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: Colors.borderLight,
+  },
+  valorContainer: {},
+  valorLabel: {
+    fontSize: 10,
+    color: Colors.textLight,
+    fontWeight: "500",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: 2,
+  },
+  valor: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: Colors.text,
+  },
+  valorFavoravel: {
+    color: Colors.success,
+  },
+  dataContainer: {
+    alignItems: "flex-end",
+  },
+  dataLabel: {
+    fontSize: 10,
+    color: Colors.textLight,
+    fontWeight: "500",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: 2,
+  },
+  data: {
+    fontSize: 13,
+    color: Colors.textSecondary,
+    fontWeight: "500",
+  },
+  modalidadeBadge: {
+    marginTop: Spacing.sm,
+    backgroundColor: Colors.primaryLight,
+    borderRadius: Radius.sm,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 2,
+    alignSelf: "flex-start",
+  },
+  modalidadeTexto: {
+    fontSize: 10,
+    color: Colors.primaryMid,
+    fontWeight: "600",
+  },
+  vazioContainer: {
+    alignItems: "center",
+    paddingTop: 60,
+    paddingHorizontal: Spacing.xl,
+  },
+  vazioTexto: {
+    marginTop: Spacing.md,
+    fontSize: 16,
+    fontWeight: "600",
+    color: Colors.textSecondary,
+  },
+  vazioSub: {
+    marginTop: Spacing.xs,
+    fontSize: 13,
+    color: Colors.textLight,
+    textAlign: "center",
+  },
 });

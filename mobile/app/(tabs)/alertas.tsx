@@ -8,14 +8,15 @@ import {
   StyleSheet,
   Alert,
   ActivityIndicator,
-  ScrollView,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "expo-router";
 import { api } from "../../services/api";
-import { Colors } from "../../constants/theme";
+import { Colors, Radius, Spacing, Shadow } from "../../constants/theme";
 
 interface Alerta {
   id: string;
+  nome?: string;
   cnae: string | null;
   valor_max: number | null;
   uf: string | null;
@@ -96,19 +97,33 @@ export default function AlertasScreen() {
   const limiteAtingido = alertas.length >= LIMITE_FREE;
 
   function renderAlerta({ item }: { item: Alerta }) {
-    const partes = [];
-    if (item.cnae) partes.push(`CNAE: ${item.cnae}`);
-    if (item.valor_max) partes.push(`Até R$ ${item.valor_max.toLocaleString("pt-BR")}`);
+    const partes: string[] = [];
+    if (item.cnae) partes.push(`CNAE ${item.cnae}`);
+    if (item.valor_max)
+      partes.push(`Até ${item.valor_max.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}`);
     if (item.uf) partes.push(`UF: ${item.uf}`);
 
     return (
-      <View style={styles.card}>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.filtros}>{partes.join(" · ") || "Todos os editais"}</Text>
-          <Text style={styles.data}>Criado em {new Date(item.criado_em).toLocaleDateString("pt-BR")}</Text>
+      <View style={styles.alertaCard}>
+        <View style={styles.alertaIcone}>
+          <Ionicons name="notifications" size={18} color={Colors.primary} />
         </View>
-        <TouchableOpacity onPress={() => handleExcluir(item.id)}>
-          <Text style={{ fontSize: 20 }}>🗑️</Text>
+        <View style={styles.alertaInfo}>
+          <Text style={styles.alertaTitulo}>
+            {item.nome || partes.join(" · ") || "Todos os editais"}
+          </Text>
+          <Text style={styles.alertaFiltros}>
+            {partes.length > 0 ? partes.join(" · ") : "Sem filtros específicos"}
+          </Text>
+          <Text style={styles.alertaData}>
+            Criado em {new Date(item.criado_em).toLocaleDateString("pt-BR")}
+          </Text>
+        </View>
+        <TouchableOpacity
+          onPress={() => handleExcluir(item.id)}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Ionicons name="trash-outline" size={18} color={Colors.danger} />
         </TouchableOpacity>
       </View>
     );
@@ -116,64 +131,92 @@ export default function AlertasScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.contador}>
-        <Text style={styles.contadorTexto}>
-          {alertas.length}/{LIMITE_FREE} alertas (plano gratuito)
-        </Text>
+      {/* Uso header */}
+      <View style={styles.usoHeader}>
+        <View style={styles.usoInfo}>
+          <Text style={styles.usoTitulo}>Alertas ativos</Text>
+          <Text style={styles.usoContador}>
+            <Text style={styles.usoNumero}>{alertas.length}</Text>
+            <Text style={styles.usoTotal}>/{LIMITE_FREE} (plano gratuito)</Text>
+          </Text>
+        </View>
+        <View style={styles.usoBarras}>
+          {Array.from({ length: LIMITE_FREE }).map((_, i) => (
+            <View
+              key={i}
+              style={[styles.usoBarra, i < alertas.length && styles.usoBarraAtiva]}
+            />
+          ))}
+        </View>
       </View>
 
+      {/* Premium banner */}
       {limiteAtingido && (
-        <View style={styles.banner}>
-          <Text style={styles.bannerTexto}>
-            🔒 Limite atingido. Faça upgrade para o plano Premium e crie alertas ilimitados.
+        <View style={styles.premiumBanner}>
+          <Ionicons name="lock-closed" size={16} color={Colors.premium} />
+          <Text style={styles.premiumTexto}>
+            {"  "}Limite atingido. Faça upgrade para alertas ilimitados.
           </Text>
         </View>
       )}
 
+      {/* Form */}
       {!limiteAtingido && (
         <View style={styles.formulario}>
           <Text style={styles.formularioTitulo}>Novo alerta</Text>
+          <Text style={styles.formularioSub}>Receba notificações de editais com esses filtros.</Text>
+
+          <Text style={styles.label}>CNAE</Text>
           <TextInput
             style={styles.input}
-            placeholder="CNAE (ex: 4711302)"
+            placeholder="Ex: 4711302"
             value={cnae}
             onChangeText={setCnae}
             keyboardType="numeric"
-            placeholderTextColor={Colors.textSecondary}
+            placeholderTextColor={Colors.textLight}
           />
+
+          <Text style={styles.label}>Valor máximo (R$)</Text>
           <TextInput
             style={styles.input}
-            placeholder="Valor máximo (R$)"
+            placeholder="Ex: 80000"
             value={valorMax}
             onChangeText={setValorMax}
             keyboardType="numeric"
-            placeholderTextColor={Colors.textSecondary}
+            placeholderTextColor={Colors.textLight}
           />
+
+          <Text style={styles.label}>Estado (UF)</Text>
           <TextInput
             style={styles.input}
-            placeholder="UF (ex: SP)"
+            placeholder="Ex: SP"
             value={uf}
             onChangeText={setUf}
             maxLength={2}
             autoCapitalize="characters"
-            placeholderTextColor={Colors.textSecondary}
+            placeholderTextColor={Colors.textLight}
           />
+
           <TouchableOpacity
             style={[styles.botao, criando && styles.botaoDesabilitado]}
             onPress={handleCriar}
             disabled={criando}
+            activeOpacity={0.85}
           >
             {criando ? (
-              <ActivityIndicator color="#fff" />
+              <ActivityIndicator color={Colors.white} size="small" />
             ) : (
-              <Text style={styles.botaoTexto}>Criar alerta</Text>
+              <>
+                <Ionicons name="add-circle-outline" size={16} color={Colors.white} />
+                <Text style={styles.botaoTexto}>  Criar alerta</Text>
+              </>
             )}
           </TouchableOpacity>
         </View>
       )}
 
       {carregando ? (
-        <ActivityIndicator style={{ margin: 24 }} color={Colors.primary} />
+        <ActivityIndicator style={{ margin: 32 }} color={Colors.primary} size="large" />
       ) : (
         <FlatList
           data={alertas}
@@ -181,7 +224,13 @@ export default function AlertasScreen() {
           renderItem={renderAlerta}
           contentContainerStyle={styles.lista}
           ListEmptyComponent={
-            <Text style={styles.vazio}>Nenhum alerta configurado.</Text>
+            <View style={styles.vazioContainer}>
+              <Ionicons name="notifications-off-outline" size={52} color={Colors.border} />
+              <Text style={styles.vazioTexto}>Nenhum alerta configurado.</Text>
+              <Text style={styles.vazioSub}>
+                Crie alertas para ser notificado de novos editais relevantes.
+              </Text>
+            </View>
           }
         />
       )}
@@ -190,36 +239,179 @@ export default function AlertasScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
-  contador: {
-    padding: 12, backgroundColor: Colors.card,
-    borderBottomWidth: 1, borderBottomColor: Colors.border,
+  container: {
+    flex: 1,
+    backgroundColor: Colors.background,
   },
-  contadorTexto: { fontSize: 13, color: Colors.textSecondary, textAlign: "center" },
-  banner: {
-    margin: 12, backgroundColor: "#FFF8E1", borderRadius: 8,
-    padding: 14, borderWidth: 1, borderColor: Colors.premium,
+  usoHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: Colors.white,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
   },
-  bannerTexto: { fontSize: 13, color: "#5D4037", lineHeight: 20 },
+  usoInfo: {},
+  usoTitulo: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: Colors.text,
+    marginBottom: 2,
+  },
+  usoContador: {},
+  usoNumero: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: Colors.primary,
+  },
+  usoTotal: {
+    fontSize: 13,
+    color: Colors.textSecondary,
+  },
+  usoBarras: {
+    flexDirection: "row",
+    gap: 6,
+  },
+  usoBarra: {
+    width: 28,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Colors.border,
+  },
+  usoBarraAtiva: {
+    backgroundColor: Colors.primary,
+  },
+  premiumBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    margin: Spacing.md,
+    backgroundColor: Colors.premiumLight,
+    borderRadius: Radius.md,
+    padding: Spacing.md,
+    borderWidth: 1,
+    borderColor: Colors.premium + "40",
+  },
+  premiumTexto: {
+    flex: 1,
+    fontSize: 13,
+    color: Colors.premium,
+    fontWeight: "500",
+    lineHeight: 18,
+  },
   formulario: {
-    margin: 12, backgroundColor: Colors.card, borderRadius: 10,
-    padding: 14, borderWidth: 1, borderColor: Colors.border,
+    margin: Spacing.md,
+    backgroundColor: Colors.white,
+    borderRadius: Radius.lg,
+    padding: Spacing.md,
+    ...Shadow.sm,
   },
-  formularioTitulo: { fontSize: 15, fontWeight: "700", color: Colors.text, marginBottom: 10 },
+  formularioTitulo: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: Colors.text,
+    marginBottom: 2,
+  },
+  formularioSub: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+    marginBottom: Spacing.md,
+  },
+  label: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: Colors.textSecondary,
+    marginBottom: 5,
+    letterSpacing: 0.1,
+  },
   input: {
-    borderWidth: 1, borderColor: Colors.border, borderRadius: 8,
-    padding: 10, fontSize: 14, color: Colors.text, marginBottom: 10,
+    height: 44,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    borderRadius: Radius.md,
+    paddingHorizontal: Spacing.md,
+    fontSize: 14,
+    color: Colors.text,
+    backgroundColor: Colors.surface,
+    marginBottom: Spacing.sm + 2,
   },
-  botao: { backgroundColor: Colors.primary, borderRadius: 8, padding: 12, alignItems: "center" },
-  botaoDesabilitado: { opacity: 0.6 },
-  botaoTexto: { color: "#fff", fontWeight: "700", fontSize: 14 },
-  lista: { padding: 12, paddingBottom: 32 },
-  card: {
-    flexDirection: "row", alignItems: "center", backgroundColor: Colors.card,
-    borderRadius: 8, padding: 12, marginBottom: 8,
-    borderWidth: 1, borderColor: Colors.border,
+  botao: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: Colors.primary,
+    borderRadius: Radius.md,
+    padding: 13,
+    marginTop: 4,
   },
-  filtros: { fontSize: 13, fontWeight: "600", color: Colors.text },
-  data: { fontSize: 11, color: Colors.textSecondary, marginTop: 2 },
-  vazio: { textAlign: "center", color: Colors.textSecondary, marginTop: 48, fontSize: 15, padding: 24 },
+  botaoDesabilitado: {
+    opacity: 0.65,
+  },
+  botaoTexto: {
+    color: Colors.white,
+    fontWeight: "700",
+    fontSize: 14,
+  },
+  lista: {
+    padding: Spacing.md,
+    paddingBottom: 40,
+  },
+  alertaCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: Colors.white,
+    borderRadius: Radius.md,
+    padding: Spacing.md,
+    marginBottom: Spacing.sm,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...Shadow.sm,
+  },
+  alertaIcone: {
+    width: 38,
+    height: 38,
+    borderRadius: Radius.sm,
+    backgroundColor: Colors.primaryLight,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: Spacing.md,
+  },
+  alertaInfo: {
+    flex: 1,
+    marginRight: Spacing.sm,
+  },
+  alertaTitulo: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: Colors.text,
+    marginBottom: 2,
+  },
+  alertaFiltros: {
+    fontSize: 11,
+    color: Colors.textSecondary,
+    marginBottom: 2,
+  },
+  alertaData: {
+    fontSize: 10,
+    color: Colors.textLight,
+  },
+  vazioContainer: {
+    alignItems: "center",
+    paddingTop: 60,
+    paddingHorizontal: Spacing.xl,
+  },
+  vazioTexto: {
+    marginTop: Spacing.md,
+    fontSize: 16,
+    fontWeight: "600",
+    color: Colors.textSecondary,
+  },
+  vazioSub: {
+    marginTop: Spacing.xs,
+    fontSize: 13,
+    color: Colors.textLight,
+    textAlign: "center",
+    lineHeight: 20,
+  },
 });
