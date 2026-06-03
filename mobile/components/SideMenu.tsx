@@ -7,10 +7,10 @@ import {
   Animated,
   Dimensions,
   TouchableWithoutFeedback,
-  Alert,
   Modal,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import { Colors, Radius, Spacing } from "../constants/theme";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
@@ -31,6 +31,7 @@ interface ItemMenu {
 }
 
 export function SideMenu({ visivel, onFechar, onLogout }: SideMenuProps) {
+  const router = useRouter();
   const translateX = useRef(new Animated.Value(-MENU_WIDTH)).current;
   const opacidade = useRef(new Animated.Value(0)).current;
 
@@ -72,33 +73,26 @@ export function SideMenu({ visivel, onFechar, onLogout }: SideMenuProps) {
       icone: "person-circle-outline",
       label: "Editar Perfil",
       descricao: "Nome, e-mail e CNPJ",
-      onPress: () =>
-        Alert.alert("Em breve", "Edição de perfil estará disponível na próxima versão."),
+      onPress: () => router.push("/perfil"),
     },
     {
       icone: "settings-outline",
       label: "Configurações",
       descricao: "Notificações e preferências",
-      onPress: () =>
-        Alert.alert("Em breve", "Configurações estarão disponíveis na próxima versão."),
+      onPress: () => router.push("/configuracoes"),
     },
     {
       icone: "diamond-outline",
       label: "Plano Premium",
       descricao: "Alertas ilimitados + checklist avançado",
-      onPress: () =>
-        Alert.alert(
-          "LicitaME Premium",
-          "Com o plano Premium você acessa alertas ilimitados, checklist completo e suporte prioritário."
-        ),
+      onPress: () => router.push("/premium"),
       destaque: Colors.premium,
     },
     {
       icone: "help-circle-outline",
       label: "Ajuda & Suporte",
       descricao: "Dúvidas e central de ajuda",
-      onPress: () =>
-        Alert.alert("Suporte", "Acesse nossa documentação em licita.me/ajuda"),
+      onPress: () => router.push("/ajuda"),
     },
   ];
 
