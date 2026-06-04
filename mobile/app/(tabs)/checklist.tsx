@@ -10,7 +10,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useFocusEffect } from "expo-router";
+import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import { api } from "../../services/api";
 import { Colors, Radius, Spacing, Shadow } from "../../constants/theme";
 
@@ -32,18 +32,19 @@ interface ChecklistData {
 const PLANO_ATUAL = "free";
 
 export default function ChecklistScreen() {
+  const { editalId: editalIdParam } = useLocalSearchParams<{ editalId?: string }>();
   const [editalId, setEditalId] = useState("");
   const [checklist, setChecklist] = useState<ChecklistData | null>(null);
   const [carregando, setCarregando] = useState(false);
 
-  async function carregarChecklist() {
-    if (!editalId.trim()) {
+  async function carregarChecklistById(id: string) {
+    if (!id.trim()) {
       Alert.alert("Atenção", "Informe o ID do edital.");
       return;
     }
     setCarregando(true);
     try {
-      const { data } = await api.get(`/editais/${editalId.trim()}/checklist`);
+      const { data } = await api.get(`/editais/${id.trim()}/checklist`);
       setChecklist(data);
     } catch {
       Alert.alert("Erro", "Edital não encontrado ou sem checklist.");
@@ -51,6 +52,19 @@ export default function ChecklistScreen() {
       setCarregando(false);
     }
   }
+
+  function carregarChecklist() {
+    carregarChecklistById(editalId);
+  }
+
+  useFocusEffect(
+    useCallback(() => {
+      if (editalIdParam) {
+        setEditalId(editalIdParam);
+        carregarChecklistById(editalIdParam);
+      }
+    }, [editalIdParam])
+  );
 
   async function toggleItem(itemId: string, concluido: boolean) {
     if (!checklist) return;

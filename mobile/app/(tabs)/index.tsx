@@ -13,7 +13,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { api } from "../../services/api";
 import { Colors, Radius, Spacing, Shadow } from "../../constants/theme";
-import { useFocusEffect } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 
 interface Edital {
   id: string;
@@ -47,6 +47,7 @@ function formatarData(data: string | null): string {
 }
 
 export default function EditaisScreen() {
+  const router = useRouter();
   const [busca, setBusca] = useState("");
   const [editais, setEditais] = useState<Edital[]>([]);
   const [carregando, setCarregando] = useState(false);
@@ -94,7 +95,11 @@ export default function EditaisScreen() {
       (item.valor_estimado !== null && item.valor_estimado <= MEI_LIMITE);
 
     return (
-      <View style={[styles.card, favoravel && styles.cardFavoravel]}>
+      <TouchableOpacity
+        style={[styles.card, favoravel && styles.cardFavoravel]}
+        onPress={() => router.push({ pathname: "/(tabs)/checklist", params: { editalId: item.id } })}
+        activeOpacity={0.75}
+      >
         {favoravel && (
           <View style={styles.badge}>
             <Ionicons name="checkmark-circle" size={12} color={Colors.success} />
@@ -132,7 +137,13 @@ export default function EditaisScreen() {
             <Text style={styles.modalidadeTexto}>{item.modalidade}</Text>
           </View>
         ) : null}
-      </View>
+
+        <View style={styles.checklistHint}>
+          <Ionicons name="checkbox-outline" size={12} color={Colors.primary} />
+          <Text style={styles.checklistHintTexto}>Ver checklist de habilitação</Text>
+          <Ionicons name="chevron-forward" size={12} color={Colors.primary} />
+        </View>
+      </TouchableOpacity>
     );
   }
 
@@ -372,6 +383,21 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: Colors.primaryMid,
     fontWeight: "600",
+  },
+  checklistHint: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginTop: Spacing.sm,
+    paddingTop: Spacing.xs,
+    borderTopWidth: 1,
+    borderTopColor: Colors.primaryLight,
+  },
+  checklistHintTexto: {
+    flex: 1,
+    fontSize: 11,
+    color: Colors.primary,
+    fontWeight: "500",
   },
   vazioContainer: {
     alignItems: "center",
