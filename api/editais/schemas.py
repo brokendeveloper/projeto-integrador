@@ -16,8 +16,8 @@ class EditalResumo(BaseModel):
 
 
 class EditalDetalhe(EditalResumo):
-    cnpj_orgao: Optional[str]
-    url_edital: Optional[str]
+    cnpj_orgao: Optional[str] = None
+    url_edital: Optional[str] = None
 
 
 class PaginacaoResponse(BaseModel):
