@@ -32,12 +32,17 @@ export default function AlertasScreen() {
   const [valorMax, setValorMax] = useState("");
   const [uf, setUf] = useState("");
   const [criando, setCriando] = useState(false);
+  const [isPremium, setIsPremium] = useState(false);
 
-  async function carregarAlertas() {
+  async function carregarDados() {
     setCarregando(true);
     try {
-      const { data } = await api.get("/alertas");
-      setAlertas(data);
+      const [alertasRes, planoRes] = await Promise.all([
+        api.get("/alertas"),
+        api.get("/plano"),
+      ]);
+      setAlertas(alertasRes.data);
+      setIsPremium(planoRes.data.plano_atual === "premium");
     } catch {
       Alert.alert("Erro", "Não foi possível carregar os alertas.");
     } finally {
@@ -47,12 +52,12 @@ export default function AlertasScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      carregarAlertas();
+      carregarDados();
     }, [])
   );
 
   async function handleCriar() {
-    if (alertas.length >= LIMITE_FREE) return;
+    if (!isPremium && alertas.length >= LIMITE_FREE) return;
     if (!cnae.trim() && !valorMax.trim() && !uf.trim()) {
       Alert.alert("Atenção", "Preencha ao menos um filtro.");
       return;
@@ -94,7 +99,7 @@ export default function AlertasScreen() {
     ]);
   }
 
-  const limiteAtingido = alertas.length >= LIMITE_FREE;
+  const limiteAtingido = !isPremium && alertas.length >= LIMITE_FREE;
 
   function renderAlerta({ item }: { item: Alerta }) {
     const partes: string[] = [];
@@ -136,18 +141,24 @@ export default function AlertasScreen() {
         <View style={styles.usoInfo}>
           <Text style={styles.usoTitulo}>Alertas ativos</Text>
           <Text style={styles.usoContador}>
-            <Text style={styles.usoNumero}>{alertas.length}</Text>
-            <Text style={styles.usoTotal}>/{LIMITE_FREE} (plano gratuito)</Text>
+            <Text style={[styles.usoNumero, isPremium && { color: Colors.premium }]}>
+              {alertas.length}
+            </Text>
+            <Text style={styles.usoTotal}>
+              {isPremium ? " (ilimitado · Premium)" : `/${LIMITE_FREE} (plano gratuito)`}
+            </Text>
           </Text>
         </View>
-        <View style={styles.usoBarras}>
-          {Array.from({ length: LIMITE_FREE }).map((_, i) => (
-            <View
-              key={i}
-              style={[styles.usoBarra, i < alertas.length && styles.usoBarraAtiva]}
-            />
-          ))}
-        </View>
+        {!isPremium && (
+          <View style={styles.usoBarras}>
+            {Array.from({ length: LIMITE_FREE }).map((_, i) => (
+              <View
+                key={i}
+                style={[styles.usoBarra, i < alertas.length && styles.usoBarraAtiva]}
+              />
+            ))}
+          </View>
+        )}
       </View>
 
       {/* Premium banner */}

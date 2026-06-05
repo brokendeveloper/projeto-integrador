@@ -29,13 +29,12 @@ interface ChecklistData {
   items: Item[];
 }
 
-const PLANO_ATUAL = "free";
-
 export default function ChecklistScreen() {
   const { editalId: editalIdParam } = useLocalSearchParams<{ editalId?: string }>();
   const [editalId, setEditalId] = useState("");
   const [checklist, setChecklist] = useState<ChecklistData | null>(null);
   const [carregando, setCarregando] = useState(false);
+  const [plano, setPlano] = useState("free");
 
   async function carregarChecklistById(id: string) {
     if (!id.trim()) {
@@ -59,6 +58,7 @@ export default function ChecklistScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      api.get("/plano").then(({ data }) => setPlano(data.plano_atual)).catch(() => {});
       if (editalIdParam) {
         setEditalId(editalIdParam);
         carregarChecklistById(editalIdParam);
@@ -84,7 +84,7 @@ export default function ChecklistScreen() {
   const total = checklist?.items.length ?? 0;
 
   function renderItem({ item }: { item: Item }) {
-    const bloqueado = item.plano_necessario !== "free" && PLANO_ATUAL === "free";
+    const bloqueado = item.plano_necessario !== "free" && plano === "free";
 
     return (
       <TouchableOpacity
