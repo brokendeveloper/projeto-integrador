@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from api.dependencies import get_db, get_usuario_atual
@@ -22,12 +22,18 @@ router = APIRouter(prefix="/chat", tags=["💬 Assistente"])
         "- *Quais contratos posso participar como MEI?*\n"
         "- *Busque contratos de serviços de limpeza.*\n"
         "- *Quais órgãos publicam mais contratos?*\n\n"
-        "O campo `historico` é opcional e permite manter o contexto de conversas anteriores."
+        "O campo `historico` é opcional e permite manter o contexto de conversas anteriores.\n\n"
+        "**Requer plano Premium.**"
     ),
 )
 async def mensagem(
     body: ChatRequest,
     db: AsyncIOMotorDatabase = Depends(get_db),
-    _: dict = Depends(get_usuario_atual),
+    usuario: dict = Depends(get_usuario_atual),
 ):
+    if usuario.get("plano", "free") != "premium":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="O assistente Léo está disponível apenas no plano Premium.",
+        )
     return await processar_mensagem(body, db)
