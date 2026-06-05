@@ -108,6 +108,20 @@ export default function TabsLayout() {
             ),
           }}
         />
+        <Tabs.Screen
+          name="leo"
+          options={{
+            title: "Léo",
+            tabBarIcon: ({ focused, color }) => (
+              <Ionicons
+                name={focused ? "sparkles" : "sparkles-outline"}
+                size={22}
+                color={color}
+              />
+            ),
+            tabBarActiveTintColor: Colors.premium,
+          }}
+        />
       </Tabs>
 
       <SideMenu
