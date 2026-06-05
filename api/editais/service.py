@@ -17,14 +17,14 @@ def _serializar_edital(doc: dict) -> dict:
 
     return {
         "id": str(doc["_id"]),
-        "numero_controle": doc.get("numeroControlePNCP", ""),
-        "orgao": nome_orgao,
-        "objeto": doc.get("objetoContrato", doc.get("objeto", "")),
+        "numero_controle": doc.get("numeroControlePNCP") or "",
+        "orgao": nome_orgao or "",
+        "objeto": doc.get("objetoContrato") or doc.get("objeto") or "",
         "valor_estimado": float(valor) if valor else None,
-        "data_publicacao": doc.get("dataPublicacaoPncp", doc.get("data_publicacao")),
-        "data_encerramento": doc.get("dataVigenciaFim", doc.get("data_encerramento")),
-        "modalidade": doc.get("modalidadeNome", doc.get("modalidade")),
-        "uf": uf or doc.get("uf"),
+        "data_publicacao": doc.get("dataPublicacaoPncp") or doc.get("data_publicacao"),
+        "data_encerramento": doc.get("dataVigenciaFim") or doc.get("data_encerramento"),
+        "modalidade": doc.get("modalidadeNome") or doc.get("modalidade"),
+        "uf": uf or doc.get("uf") or None,
         "favoravel_mei": float(valor) <= 80000.0 if valor else False,
     }
 
