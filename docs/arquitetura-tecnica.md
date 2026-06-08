@@ -42,7 +42,7 @@ O LicitaME resolve um problema real: MEIs raramente participam de licitações p
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
 │                          CLIENTE MOBILE                              │
-│                    Expo SDK 56 · React Native                        │
+│                    Expo SDK 54 · React Native                        │
 │         expo-router · axios · SecureStore · Ionicons                 │
 └──────────────────────┬───────────────────────────────────────────────┘
                        │ HTTPS / JWT Bearer
@@ -100,11 +100,11 @@ O app mobile não tem estado de servidor — cada requisição carrega o token n
 
 **HTTPBearer vs OAuth2PasswordBearer**: HTTPBearer foi escolhido para retornar 403 (proibido) ao invés de 401 com `WWW-Authenticate: Bearer`, evitando pop-ups de autenticação básica em ferramentas como Postman.
 
-### App Mobile — Expo SDK 56 + expo-router
+### App Mobile — Expo SDK 54 + expo-router
 
 **Por quê Expo e não React Native CLI?**
 
-Expo elimina a necessidade de configurar Xcode/Android Studio para desenvolvimento. O SDK 56 com `expo-router` traz file-based routing (igual ao Next.js), tornando a navegação declarativa — adicionar uma tela é criar um arquivo `.tsx` na pasta `app/`.
+Expo elimina a necessidade de configurar Xcode/Android Studio para desenvolvimento. O SDK 54 com `expo-router` traz file-based routing (igual ao Next.js), tornando a navegação declarativa — adicionar uma tela é criar um arquivo `.tsx` na pasta `app/`.
 
 **Por quê expo-router e não React Navigation?**
 
@@ -187,7 +187,7 @@ projeto-integrador/
 │   ├── dashboard.py              # Dashboard Streamlit + Plotly
 │   └── chatbot.py                # Chatbot Streamlit com Claude
 │
-├── mobile/                       # App Expo SDK 56
+├── mobile/                       # App Expo SDK 54
 │   ├── app/
 │   │   ├── _layout.tsx           # Stack root com AuthProvider + 4 telas extras
 │   │   ├── (auth)/               # login.tsx, register.tsx

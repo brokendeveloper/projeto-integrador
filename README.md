@@ -66,7 +66,7 @@ Componentes adicionais:
 | ETL | Python 3.12, requests, tenacity, pymongo |
 | API | FastAPI, Motor (async MongoDB), python-jose, passlib |
 | Banco | MongoDB Atlas, SQLite (backup local) |
-| Mobile | Expo SDK 56, React Native, TypeScript, expo-router |
+| Mobile | Expo SDK 54, React Native, TypeScript, expo-router |
 | IA | Claude (Anthropic) via tool calling |
 | Big Data | PySpark, Spark SQL |
 | DevOps | GitHub Actions CI, pytest |
@@ -278,7 +278,7 @@ projeto-integrador/
 │   ├── mcp/                    # Servidor MCP
 │   └── lgpd/                   # Direitos LGPD
 │
-├── mobile/                     # App Expo SDK 56 + TypeScript
+├── mobile/                     # App Expo SDK 54 + TypeScript
 │   ├── app/
 │   │   ├── (auth)/             # login.tsx, register.tsx
 │   │   ├── (tabs)/             # 5 telas MVP
