@@ -347,6 +347,10 @@ Detalhes: [`docs/modelo-negocio.md`](docs/modelo-negocio.md)
 
 - **Luccas Fernandes**
 - **Gabriel Nogueira**
+- **Maria Eduarda Pernambuco**
+- **Luiz Henrique Cavalcanti**
+- **Nathalia Carvalho**
+- **Carlos Cavalcante**
 
 ---
 

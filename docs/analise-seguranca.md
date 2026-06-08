@@ -3,7 +3,7 @@
 **Disciplina:** Segurança da Informação
 **Projeto:** LicitaME — Plataforma de Apoio à Concorrência Pública para MEIs
 **Data:** Junho/2026
-**Autores:** Luccas Fernandes, Gabriel Nogueira
+**Autores:** Luccas Fernandes, Gabriel Nogueira, Maria Eduarda Pernambuco, Luiz Henrique Cavalcanti, Nathalia Carvalho, Carlos Cavalcante
 
 ---
 
