@@ -73,7 +73,17 @@ class PNCPExtractor:
 
         while True:
             self.logger.debug("Buscando página %d de %s", params["pagina"], endpoint)
-            data = self._get(endpoint, params)
+            try:
+                data = self._get(endpoint, params)
+            except Exception as exc:
+                self.logger.warning(
+                    "Erro na página %d de %s — retornando %d registros parciais. Detalhe: %s",
+                    params["pagina"],
+                    endpoint,
+                    len(results),
+                    exc,
+                )
+                break
 
             records = data if isinstance(data, list) else data.get("data", [])
             results.extend(records)

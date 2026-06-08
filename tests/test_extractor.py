@@ -49,8 +49,12 @@ def test_fetch_contratos_paginacao(extractor):
 def test_get_levanta_http_error(extractor):
     """Deve propagar HTTPError quando a API retornar erro."""
     mock_response = MagicMock()
-    mock_response.raise_for_status.side_effect = requests.HTTPError("404")
     mock_response.status_code = 404
+
+    # HTTPError precisa ter .response populado — igual ao que requests faz internamente
+    http_error = requests.HTTPError("404")
+    http_error.response = mock_response
+    mock_response.raise_for_status.side_effect = http_error
 
     with patch.object(extractor.session, "get", return_value=mock_response):
         with pytest.raises(requests.HTTPError):

@@ -1,0 +1,253 @@
+### ============================================================
+###  MEI Licitações — Sequência de Testes da API v0.2.0
+###  Compatível com: PyCharm HTTP Client / VS Code REST Client
+###
+###  COMO USAR:
+###    1. Inicie a API:  uvicorn api.main:app --reload
+###    2. Execute as requisições na ordem abaixo
+###    3. Após o passo 2 (login), copie o token e cole em @token
+### ============================================================
+
+
+# ── Variáveis globais ──────────────────────────────────────────
+@base = http://localhost:8000
+@token = COLE_O_TOKEN_AQUI_APOS_LOGIN
+
+
+### ============================================================
+###  0. HEALTH CHECK
+### ============================================================
+
+### 0.1 — Verificar se a API está no ar
+GET {{base}}/health
+
+
+### ============================================================
+###  1. AUTENTICAÇÃO
+### ============================================================
+
+### 1.1 — Registrar novo usuário
+POST {{base}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "teste@mei.com.br",
+  "senha": "Senha@123",
+  "cnpj": "12.345.678/0001-90"
+}
+
+### 1.2 — Login (copie o "access_token" da resposta e cole em @token acima)
+POST {{base}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "teste@mei.com.br",
+  "senha": "Senha@123"
+}
+
+
+### ============================================================
+###  2. EDITAIS (rota existente — warm-up)
+### ============================================================
+
+### 2.1 — Listar editais (primeira página)
+GET {{base}}/editais?pagina=1&por_pagina=5
+Authorization: Bearer {{token}}
+
+### 2.2 — Listar editais favoráveis ao MEI (valor ≤ R$ 80.000)
+GET {{base}}/editais?valor_max=80000&pagina=1&por_pagina=5
+Authorization: Bearer {{token}}
+
+
+### ============================================================
+###  3. ANALYTICS — Pipeline PySpark via API
+### ============================================================
+
+### 3.1 — Estatísticas gerais dos contratos
+###       (espelha o summary() do PySpark)
+GET {{base}}/analytics/estatisticas
+Authorization: Bearer {{token}}
+
+### 3.2 — Top 10 órgãos por volume de contratos
+###       (espelha o groupBy().count() do PySpark)
+GET {{base}}/analytics/top-orgaos?n=10
+Authorization: Bearer {{token}}
+
+### 3.3 — Top 5 órgãos (parâmetro n menor)
+GET {{base}}/analytics/top-orgaos?n=5
+Authorization: Bearer {{token}}
+
+### 3.4 — Contratos favoráveis ao MEI (valorInicial ≤ R$ 80.000)
+###       (espelha o filtro MEI do PySpark)
+GET {{base}}/analytics/contratos-mei?limite=10
+Authorization: Bearer {{token}}
+
+### 3.5 — Disparar o pipeline PySpark em background
+###       (gera CSVs em spark/output/)
+POST {{base}}/analytics/executar-spark
+Authorization: Bearer {{token}}
+
+
+### ============================================================
+###  4. MCP — Ferramentas do Servidor MCP via HTTP
+### ============================================================
+
+### 4.1 — Listar todas as ferramentas MCP disponíveis
+GET {{base}}/mcp/ferramentas
+Authorization: Bearer {{token}}
+
+### 4.2 — Invocar: estatísticas dos contratos
+POST {{base}}/mcp/invocar
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "ferramenta": "estatisticas_contratos",
+  "argumentos": {}
+}
+
+### 4.3 — Invocar: top 5 órgãos
+POST {{base}}/mcp/invocar
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "ferramenta": "top_orgaos",
+  "argumentos": { "n": 5 }
+}
+
+### 4.4 — Invocar: busca por palavra-chave
+POST {{base}}/mcp/invocar
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "ferramenta": "buscar_contratos",
+  "argumentos": {
+    "palavra_chave": "limpeza",
+    "limite": 5
+  }
+}
+
+### 4.5 — Invocar: contratos favoráveis ao MEI
+POST {{base}}/mcp/invocar
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "ferramenta": "contratos_favoraveis_mei",
+  "argumentos": { "limite": 5 }
+}
+
+### 4.6 — Invocar ferramenta inexistente (teste de erro)
+POST {{base}}/mcp/invocar
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "ferramenta": "ferramenta_invalida",
+  "argumentos": {}
+}
+
+
+### ============================================================
+###  5. CHAT — Chatbot IA com Tool Calling (Claude + MCP)
+### ============================================================
+
+### 5.1 — Pergunta simples: estatísticas
+POST {{base}}/chat/mensagem
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "mensagem": "Quantos contratos temos na base de dados?",
+  "historico": []
+}
+
+### 5.2 — Pergunta sobre MEI
+POST {{base}}/chat/mensagem
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "mensagem": "Quais contratos posso participar como MEI?",
+  "historico": []
+}
+
+### 5.3 — Busca por objeto específico
+POST {{base}}/chat/mensagem
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "mensagem": "Busque contratos relacionados a serviços de TI ou tecnologia.",
+  "historico": []
+}
+
+### 5.4 — Pergunta sobre órgãos
+POST {{base}}/chat/mensagem
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "mensagem": "Quais são os órgãos públicos que mais publicam contratos?",
+  "historico": []
+}
+
+### 5.5 — Conversa com histórico (contexto da mensagem anterior)
+POST {{base}}/chat/mensagem
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "mensagem": "E qual é o valor médio desses contratos?",
+  "historico": [
+    {
+      "role": "user",
+      "content": "Quais contratos posso participar como MEI?"
+    },
+    {
+      "role": "assistant",
+      "content": "Encontrei contratos com valor até R$ 80.000 favoráveis ao MEI..."
+    }
+  ]
+}
+
+### 5.6 — Pergunta analítica completa
+POST {{base}}/chat/mensagem
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "mensagem": "Faça um resumo completo da base: total de contratos, valor médio, e os 3 principais órgãos.",
+  "historico": []
+}
+
+
+### ============================================================
+###  6. LGPD (rotas existentes — complemento)
+### ============================================================
+
+### 6.1 — Exportar meus dados (LGPD)
+GET {{base}}/lgpd/meus-dados
+Authorization: Bearer {{token}}
+
+
+### ============================================================
+###  7. STREAMLIT — Como rodar o chatbot visual
+### ============================================================
+###
+###  Execute em um terminal separado:
+###
+###    streamlit run dashboards/chatbot.py
+###
+###  Acesse em: http://localhost:8501
+###
+###  Exemplos de perguntas para a apresentação:
+###    - "Quantos contratos temos na base?"
+###    - "Quais contratos posso participar como MEI?"
+###    - "Busque contratos de serviços de limpeza"
+###    - "Quais órgãos publicam mais contratos?"
+###    - "Qual o valor médio dos contratos?"
+###
+### ============================================================
