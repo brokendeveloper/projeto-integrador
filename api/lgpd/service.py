@@ -27,10 +27,26 @@ async def exportar_dados_usuario(usuario_id: str, db: AsyncIOMotorDatabase) -> d
             "nome": usuario.get("nome"),
             "email": usuario.get("email"),
             "cnpj": usuario.get("cnpj"),
+            "consentimento": {
+                "consentiu_termos": usuario.get("consentiu_termos", False),
+                "data_consentimento": usuario.get("data_consentimento"),
+            },
         },
         "checklist_progresso": serializar(checklist),
         "alertas": serializar(alertas),
         "historico": serializar(historico),
+    }
+
+
+async def consultar_consentimento(usuario_id: str, db: AsyncIOMotorDatabase) -> dict:
+    """Retorna o status de consentimento LGPD do usuário."""
+    oid = ObjectId(usuario_id)
+    usuario = await db.usuarios.find_one({"_id": oid})
+    if not usuario:
+        return {"consentiu_termos": False, "data_consentimento": None}
+    return {
+        "consentiu_termos": usuario.get("consentiu_termos", False),
+        "data_consentimento": usuario.get("data_consentimento"),
     }
 
 
