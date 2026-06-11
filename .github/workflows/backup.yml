@@ -1,0 +1,32 @@
+name: Backup semanal MongoDB
+
+on:
+  schedule:
+    # Toda domingo às 02:00 UTC
+    - cron: "0 2 * * 0"
+  workflow_dispatch: # Permite execução manual
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar MongoDB Database Tools
+        run: |
+          wget -q https://fastdl.mongodb.org/tools/db/mongodb-database-tools-ubuntu2204-x86_64-100.9.4.deb
+          sudo dpkg -i mongodb-database-tools-ubuntu2204-x86_64-100.9.4.deb
+
+      - name: Executar backup
+        env:
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          MONGODB_DB: ${{ secrets.MONGODB_DB_NAME }}
+        run: bash scripts/backup.sh
+
+      - name: Fazer upload do backup como artefato
+        uses: actions/upload-artifact@v4
+        with:
+          name: backup-mongodb-${{ github.run_id }}
+          path: backups/
+          retention-days: 30

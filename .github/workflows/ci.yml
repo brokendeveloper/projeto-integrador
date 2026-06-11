@@ -20,6 +20,12 @@ jobs:
       - name: Instalar dependências
         run: pip install -r requirements.txt
 
+      - name: Instalar pip-audit
+        run: pip install pip-audit
+
+      - name: Auditar vulnerabilidades nas dependências
+        run: pip-audit --requirement requirements.txt
+
       - name: Rodar testes
         env:
           MONGODB_URI: ${{ secrets.MONGODB_URI }}
