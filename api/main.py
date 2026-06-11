@@ -22,6 +22,12 @@ from api.config.router import router as config_router
 from api.plano.router import router as plano_router
 from api.middleware import configurar_middleware, SecurityHeadersMiddleware
 
+_raw_origins = os.getenv(
+    "ALLOWED_ORIGINS",
+    "http://localhost:3000,http://localhost:8501"
+)
+ALLOWED_ORIGINS: list[str] = [o.strip() for o in _raw_origins.split(",") if o.strip()]
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -166,7 +172,7 @@ configurar_middleware(app)
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

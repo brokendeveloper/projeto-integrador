@@ -1,3 +1,19 @@
+"""
+Módulo de segurança da autenticação LicitaME.
+
+Responsabilidades:
+- Geração e validação de tokens JWT (HS256)
+- Hash e verificação de senhas com bcrypt
+- Dependência FastAPI `get_current_user` para proteção de rotas
+
+Criptografia em repouso (AES-256):
+    Todos os dados persistidos no MongoDB — incluindo hashes de senha,
+    documentos GridFS e tokens de reset — são protegidos pela criptografia
+    em repouso do MongoDB Atlas (AES-256 via Encrypted Storage Engine).
+    O Atlas gerencia as chaves no Key Management Service configurado
+    no projeto. Referência:
+    https://www.mongodb.com/docs/atlas/security-encrypt-at-rest/
+"""
 import os
 from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt
