@@ -182,3 +182,79 @@ Endpoints disponíveis em `/lgpd/`:
 | Exclusão de documento de outro usuário | HTTP 403 — OK |
 | Exclusão de alerta de outro usuário | HTTP 404 (não encontrado para o usuário) — OK |
 | Headers de segurança presentes | Verificados via `curl -I` — OK |
+
+---
+
+## 6. Estratégia de Backup e Recuperação
+
+### 6.1 Objetivos de Recuperação (RTO/RPO)
+
+| Métrica | Valor | Descrição |
+|---|---|---|
+| **RTO** (Recovery Time Objective) | **4 horas** | Tempo máximo tolerável para restaurar o serviço após uma falha completa |
+| **RPO** (Recovery Point Objective) | **24 horas** | Perda máxima de dados tolerável — representa o intervalo entre backups semanais |
+
+### 6.2 Mecanismo de Backup
+
+| Item | Detalhe |
+|---|---|
+| Ferramenta | `mongodump` (MongoDB Database Tools) |
+| Frequência | Semanal — toda domingo às 02:00 UTC |
+| Acionamento | GitHub Actions workflow (`.github/workflows/backup.yml`) + `workflow_dispatch` para execução manual |
+| Destino | Artefato do GitHub Actions com retenção de 30 dias |
+| Compressão | `--gzip` ativado em todos os dumps |
+| Escopo | Database completo (`pncp_etl`) incluindo collections de usuários, contratos, alertas, histórico e GridFS |
+
+### 6.3 Procedimento de Restauração
+
+1. Identificar o artefato no GitHub Actions: **Actions → Backup semanal MongoDB → run desejada**
+2. Baixar e descompactar o artefato `backup-mongodb-<run_id>`
+3. Definir variáveis de ambiente: `MONGODB_URI`, `MONGODB_DB`, `BACKUP_PATH`
+4. Executar: `bash scripts/restore.sh`
+5. O script usa `mongorestore --drop` para substituir collections existentes
+6. Verificar integridade: `GET /health` e `GET /analytics/estatisticas`
+
+### 6.4 Limitações e Recomendações de Evolução
+
+| Limitação Atual | Recomendação |
+|---|---|
+| RPO de 24h (backup semanal) | Habilitar MongoDB Atlas Continuous Cloud Backup (RPO de segundos) |
+| Artefato GitHub Actions (30 dias) | Enviar dump para S3/GCS com retenção configurável e criptografia server-side |
+| Sem validação automática do backup | Adicionar step no workflow que faz mongorestore em banco temporário de teste |
+
+---
+
+## 7. Gestão de Dependências e Fornecedores
+
+### 7.1 Controle Automático de Vulnerabilidades
+
+| Ferramenta | Escopo | Frequência | Configuração |
+|---|---|---|---|
+| **Dependabot** | pip (`requirements.txt`) + npm (`mobile/`) | Semanal (segundas-feiras, 09:00 BRT) | `.github/dependabot.yml` |
+| **pip-audit** | `requirements.txt` (runtime) | A cada push/PR para `main` e `dev` | `.github/workflows/ci.yml` |
+
+### 7.2 Processo de Resposta a CVEs
+
+1. **Detecção**: Dependabot abre PR automático ou pip-audit falha no CI
+2. **Triagem** (SLA: 48h): avaliar CVSS score e se o vetor de ataque é aplicável ao projeto
+3. **Correção**:
+   - CVSS ≥ 7.0 (Alto/Crítico): 7 dias
+   - CVSS < 7.0 (Médio/Baixo): 30 dias
+4. **Validação**: pip-audit no CI deve passar antes do merge
+
+### 7.3 Inventário de Dependências Críticas de Segurança
+
+| Pacote | Versão | Risco | Observação |
+|---|---|---|---|
+| `python-jose[cryptography]` | 3.3.0 | Alto | Assina todos os JWTs; monitorar CVEs em `jose` e `cryptography` |
+| `passlib[bcrypt]` | 1.7.4 | Alto | Hashing de senhas; manter atualizado para patches de timing |
+| `fastapi` | 0.115.0 | Médio | Framework principal; atualizar seguindo guia de migração |
+| `motor` | 3.7.1 | Médio | Driver MongoDB assíncrono; compatível com pymongo 4.9.0 |
+| `anthropic` | 0.40.0 | Baixo | SDK do chatbot Léo; sem acesso a dados sensíveis de usuários |
+| `slowapi` | 0.1.9 | Baixo | Rate limiting; falha pode expor `/auth` a força bruta |
+
+### 7.4 Política de Versões
+
+- O `requirements.txt` usa versões fixadas (`==`) para reprodutibilidade de ambiente de desenvolvimento
+- O Dependabot abre PRs semanais para atualizações de patch e minor, mantendo o inventário atualizado
+- Dependências de segurança críticas (`python-jose`, `passlib`) têm prioridade máxima de atualização
