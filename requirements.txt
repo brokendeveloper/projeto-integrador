@@ -9,7 +9,7 @@ plotly==5.22.0
 pytest==8.2.2
 pytest-mock==3.14.0
 fastapi>=0.115.0
-uvicorn[standard]==0.30.6
+uvicorn[standard]>=0.31.1
 motor==3.7.1
 python-jose[cryptography]==3.4.0
 passlib[bcrypt]==1.7.4
