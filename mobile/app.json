@@ -2,6 +2,7 @@
   "expo": {
     "name": "LicitaME",
     "slug": "mei-licitacoes",
+    "owner": "brokendeveloper",
     "scheme": "mei-licitacoes",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -26,6 +27,12 @@
     "plugins": [
       "expo-router",
       "expo-secure-store"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "e2991cb1-beae-4585-9c93-404ac6d8907e"
+      }
+    }
   }
 }
