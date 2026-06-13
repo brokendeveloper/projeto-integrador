@@ -31,6 +31,10 @@ build/
 
 # Ambiente
 .env
+
+# Claude Code
+.claude/
+mobile/.claude/
 # Parquet
 *.parquet
 data/
