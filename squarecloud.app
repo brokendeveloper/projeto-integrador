@@ -3,4 +3,4 @@ DESCRIPTION="Plataforma de apoio à participação de MEIs em licitações públ
 MAIN=api/main.py
 MEMORY=512
 VERSION=recommended
-START=uvicorn api.main:app --host 0.0.0.0 --port 80
+START=python -m uvicorn api.main:app --host 0.0.0.0 --port 80
