@@ -11,11 +11,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        env:
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
       - name: Configurar Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+        env:
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
       - name: Instalar dependências
         run: pip install -r requirements.txt
@@ -24,7 +28,8 @@ jobs:
         run: pip install pip-audit
 
       - name: Auditar vulnerabilidades nas dependências
-        run: pip-audit --requirement requirements.txt
+        # PYSEC-2025-185: vulnerabilidade em python-jose sem versão de correção disponível
+        run: pip-audit --requirement requirements.txt --ignore-vuln PYSEC-2025-185
 
       - name: Rodar testes
         env:
