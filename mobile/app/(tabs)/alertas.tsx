@@ -73,7 +73,7 @@ export default function AlertasScreen() {
       setCnae("");
       setValorMax("");
       setUf("");
-      await carregarAlertas();
+      await carregarDados();
     } catch {
       Alert.alert("Erro", "Não foi possível criar o alerta.");
     } finally {

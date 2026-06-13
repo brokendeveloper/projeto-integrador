@@ -1,4 +1,6 @@
 from pydantic import BaseModel, EmailStr, field_validator
+from typing import Optional
+from datetime import datetime
 import re
 
 
@@ -7,6 +9,8 @@ class UserRegister(BaseModel):
     email: EmailStr
     cnpj: str
     senha: str
+    consentiu_termos: bool
+    data_consentimento: Optional[datetime] = None
 
     @field_validator("cnpj")
     @classmethod
@@ -21,6 +25,15 @@ class UserRegister(BaseModel):
     def validar_senha(cls, v: str) -> str:
         if len(v) < 8:
             raise ValueError("Senha deve ter pelo menos 8 caracteres")
+        return v
+
+    @field_validator("consentiu_termos")
+    @classmethod
+    def validar_consentimento(cls, v: bool) -> bool:
+        if not v:
+            raise ValueError(
+                "É necessário consentir com os termos de uso para criar uma conta."
+            )
         return v
 
 
@@ -39,3 +52,19 @@ class UserPublic(BaseModel):
     nome: str
     email: str
     cnpj: str
+
+
+class ResetSenhaRequest(BaseModel):
+    email: EmailStr
+
+
+class RedefinirSenhaRequest(BaseModel):
+    token: str
+    nova_senha: str
+
+    @field_validator("nova_senha")
+    @classmethod
+    def validar_nova_senha(cls, v: str) -> str:
+        if len(v) < 8:
+            raise ValueError("A nova senha deve ter pelo menos 8 caracteres")
+        return v

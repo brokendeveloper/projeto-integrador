@@ -40,7 +40,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   async function registrar(nome: string, email: string, cnpj: string, senha: string) {
-    const { data } = await api.post("/auth/register", { nome, email, cnpj, senha });
+    const { data } = await api.post("/auth/register", {
+      nome,
+      email,
+      cnpj,
+      senha,
+      consentiu_termos: true,
+      data_consentimento: new Date().toISOString(),
+    });
     await salvarToken(data.access_token);
     setAutenticado(true);
   }

@@ -139,11 +139,11 @@ async def test_marcar_item_concluido():
 
 @pytest.mark.asyncio
 async def test_checklist_sem_autenticacao():
-    """GET /editais/{id}/checklist sem token deve retornar 403."""
+    """GET /editais/{id}/checklist sem token deve retornar 401."""
     mock_db = _make_mock_db(_make_usuario())
     app.state.db = mock_db
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.get("/editais/edital-001/checklist")
 
-    assert response.status_code == 403
+    assert response.status_code == 401

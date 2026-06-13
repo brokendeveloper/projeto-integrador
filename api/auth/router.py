@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Request
 from motor.motor_asyncio import AsyncIOMotorDatabase
-from .schemas import UserRegister, UserLogin, TokenResponse
-from .service import registrar_usuario, autenticar_usuario
+from .schemas import UserRegister, UserLogin, TokenResponse, ResetSenhaRequest, RedefinirSenhaRequest
+from .service import registrar_usuario, autenticar_usuario, solicitar_reset_senha, redefinir_senha
 from api.dependencies import get_db
 from api.middleware import limiter
 
@@ -41,3 +41,39 @@ async def register(request: Request, dados: UserRegister, db: AsyncIOMotorDataba
 @limiter.limit("10/minute")
 async def login(request: Request, dados: UserLogin, db: AsyncIOMotorDatabase = Depends(get_db)):
     return await autenticar_usuario(dados.email, dados.senha, db)
+
+
+@router.post(
+    "/esqueci-senha",
+    summary="Solicitar reset de senha",
+    description=(
+        "Gera um token de reset de senha com validade de **1 hora**.\n\n"
+        "Como não há serviço de e-mail configurado neste ambiente, "
+        "o token é retornado diretamente na resposta.\n\n"
+        "**Em produção:** substituir pelo envio via e-mail transacional."
+    ),
+)
+@limiter.limit("5/minute")
+async def esqueci_senha(
+    request: Request,
+    dados: ResetSenhaRequest,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
+    return await solicitar_reset_senha(dados.email, db)
+
+
+@router.post(
+    "/redefinir-senha",
+    summary="Redefinir senha com token",
+    description=(
+        "Redefine a senha do usuário usando o token obtido em `POST /auth/esqueci-senha`.\n\n"
+        "O token tem validade de **1 hora** e é invalidado após o uso."
+    ),
+)
+@limiter.limit("5/minute")
+async def redefinir_senha_endpoint(
+    request: Request,
+    dados: RedefinirSenhaRequest,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
+    return await redefinir_senha(dados.token, dados.nova_senha, db)

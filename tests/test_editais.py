@@ -163,11 +163,11 @@ async def test_buscar_edital_por_id_invalido():
 
 @pytest.mark.asyncio
 async def test_buscar_editais_sem_autenticacao():
-    """GET /editais sem token deve retornar 403."""
+    """GET /editais sem token deve retornar 401."""
     mock_db = _make_mock_db([])
     app.state.db = mock_db
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.get("/editais")
 
-    assert response.status_code == 403
+    assert response.status_code == 401

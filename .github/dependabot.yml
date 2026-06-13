@@ -1,0 +1,31 @@
+version: 2
+updates:
+  # Dependências Python (pip)
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/Sao_Paulo"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependências"
+      - "segurança"
+    commit-message:
+      prefix: "build(deps)"
+
+  # Dependências npm do app mobile
+  - package-ecosystem: "npm"
+    directory: "/mobile"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/Sao_Paulo"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependências"
+      - "mobile"
+    commit-message:
+      prefix: "build(deps)"
