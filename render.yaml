@@ -2,13 +2,17 @@ services:
   - type: web
     name: licitame-api
     runtime: python
+    pythonVersion: "3.12.0"
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn api.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
     envVars:
       - key: MONGODB_URI
         sync: false
-      - key: MONGODB_DB_NAME
+      - key: MONGODB_DB
         value: pncp_etl
+      - key: MONGODB_COLLECTION
+        value: contratos
       - key: JWT_SECRET_KEY
         sync: false
       - key: JWT_ALGORITHM
