@@ -28,9 +28,11 @@ jobs:
         run: pip install pip-audit
 
       - name: Auditar vulnerabilidades nas dependências
-        # PYSEC-2025-185: python-jose sem correção disponível
-        # CVE-2025-71176: pytest (ferramenta de teste, não afeta produção) — incompatível com pytest-asyncio<0.27
-        run: pip-audit --requirement requirements.txt --ignore-vuln PYSEC-2025-185 --ignore-vuln CVE-2025-71176
+        # CVEs ignorados com justificativa documentada:
+        # PYSEC-2025-185: python-jose — sem versão de correção disponível
+        # CVE-2025-71176: pytest — ferramenta de teste apenas, não afeta produção
+        # CVE-2026-30922: pyasn1 — python-jose 3.4.0 exige pyasn1<0.5.0, impossível atualizar sem trocar biblioteca JWT
+        run: pip-audit --requirement requirements.txt --ignore-vuln PYSEC-2025-185 --ignore-vuln CVE-2025-71176 --ignore-vuln CVE-2026-30922
 
       - name: Rodar testes
         env:
