@@ -2,12 +2,15 @@
 
 import asyncio
 import json
+import logging
 import sys
 from pathlib import Path
 from typing import Any
 
 import pandas as pd
 from motor.motor_asyncio import AsyncIOMotorDatabase
+
+logger = logging.getLogger("licitame.spark")
 
 from .schemas import (
     ContratoMEIItem,
@@ -136,6 +139,7 @@ async def executar_spark() -> SparkJobResponse:
     )
 
     # Não aguarda — retorna imediatamente para o cliente
+    logger.info("[SPARK] Pipeline iniciado em background (PID %d).", proc.pid)
     asyncio.ensure_future(_aguardar_spark(proc))
 
     return SparkJobResponse(
@@ -241,12 +245,17 @@ def obter_dados_spark() -> SparkSummaryResponse:
 
 
 async def _aguardar_spark(proc: asyncio.subprocess.Process) -> None:
-    """Aguarda o processo PySpark em background e loga o resultado."""
+    """Aguarda o processo PySpark em background e registra o resultado no log."""
     stdout, stderr = await proc.communicate()
     if proc.returncode != 0:
-        print(f"[SPARK] ERRO (código {proc.returncode}):\n{stderr.decode()}")
+        logger.error(
+            "[SPARK] Pipeline falhou (código %d):\n%s",
+            proc.returncode,
+            stderr.decode(errors="replace"),
+        )
     else:
-        print(f"[SPARK] Concluído com sucesso.\n{stdout.decode()[-500:]}")
+        logger.info("[SPARK] Pipeline concluído com sucesso (PID %d).", proc.pid)
+        logger.debug("[SPARK] Saída final:\n%s", stdout.decode(errors="replace")[-800:])
 
 
 # ── Funções utilitárias reutilizadas pelo módulo MCP ──────────────────────────

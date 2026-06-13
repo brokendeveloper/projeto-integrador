@@ -1,3 +1,5 @@
+import asyncio
+import logging
 import os
 from contextlib import asynccontextmanager
 
@@ -7,6 +9,14 @@ from fastapi.responses import FileResponse
 from motor.motor_asyncio import AsyncIOMotorClient
 
 from config.settings import MONGODB_DB, MONGODB_URI
+
+# Configuração centralizada de logging — todas as submódulos herdam este handler
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+logger = logging.getLogger("licitame")
 from api.auth.router import router as auth_router
 from api.editais.router import router as editais_router
 from api.checklist.router import router as checklist_router
@@ -29,11 +39,27 @@ _raw_origins = os.getenv(
 ALLOWED_ORIGINS: list[str] = [o.strip() for o in _raw_origins.split(",") if o.strip()]
 
 
+async def _mongodb_keepalive(db) -> None:
+    """Pinga o MongoDB a cada 25 min para evitar auto-pause no Atlas M0."""
+    while True:
+        await asyncio.sleep(25 * 60)
+        try:
+            await db.command("ping")
+            logger.debug("MongoDB keep-alive: ping OK.")
+        except Exception as exc:
+            logger.warning("MongoDB keep-alive: falha no ping — %s", exc)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    logger.info("LicitaME API iniciando — conectando ao MongoDB...")
     app.state.db = AsyncIOMotorClient(MONGODB_URI)[MONGODB_DB]
+    logger.info("Conexão com MongoDB estabelecida. API pronta.")
+    task = asyncio.create_task(_mongodb_keepalive(app.state.db))
     yield
+    task.cancel()
     app.state.db.client.close()
+    logger.info("LicitaME API encerrada — conexão com MongoDB fechada.")
 
 
 app = FastAPI(
