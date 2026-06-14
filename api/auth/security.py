@@ -18,6 +18,7 @@ import os
 from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt
 from passlib.context import CryptContext
+from typing import Optional
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
@@ -32,6 +33,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 _bearer_scheme = HTTPBearer(
     scheme_name="Bearer Token",
     description="Cole o token retornado em POST /auth/login. Formato: o token puro, sem 'Bearer '.",
+    auto_error=False,  # retorna None em vez de 403 quando header ausente
 )
 
 
@@ -51,15 +53,17 @@ def criar_token(data: dict) -> str:
 
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(_bearer_scheme),
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(_bearer_scheme),
 ) -> str:
-    token = credentials.credentials
     excecao = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Sua sessão expirou. Faça login novamente para continuar.",
         headers={"WWW-Authenticate": "Bearer"},
     )
+    if credentials is None:
+        raise excecao
     try:
+        token = credentials.credentials
         payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
         user_id: str = payload.get("sub")
         if user_id is None:
