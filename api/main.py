@@ -55,9 +55,17 @@ async def lifespan(app: FastAPI):
     logger.info("LicitaME API iniciando — conectando ao MongoDB...")
     app.state.db = AsyncIOMotorClient(MONGODB_URI)[MONGODB_DB]
     logger.info("Conexão com MongoDB estabelecida. API pronta.")
-    task = asyncio.create_task(_mongodb_keepalive(app.state.db))
+    keepalive_task = asyncio.create_task(_mongodb_keepalive(app.state.db))
+
+    # Consumer Kafka de alertas (opcional — ativo apenas com KAFKA_BOOTSTRAP_SERVERS)
+    from kafka.consumer import iniciar_consumer_alertas
+    kafka_task = await iniciar_consumer_alertas(app.state.db)
+
     yield
-    task.cancel()
+
+    keepalive_task.cancel()
+    if kafka_task:
+        kafka_task.cancel()
     app.state.db.client.close()
     logger.info("LicitaME API encerrada — conexão com MongoDB fechada.")
 
