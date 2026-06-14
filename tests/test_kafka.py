@@ -108,6 +108,96 @@ class TestKafkaConsumer:
         base.update(kwargs)
         return base
 
+    def _make_mock_db(self, alertas=None):
+        mock_db = MagicMock()
+        mock_db.silver_contratos.update_one = AsyncMock()
+        mock_db.gold_contratos_mei.update_one = AsyncMock()
+        mock_db.gold_top_orgaos.update_one = AsyncMock()
+        mock_db.alertas.find.return_value = _AsyncIter(alertas or [])
+        mock_db.notificacoes.insert_one = AsyncMock()
+        return mock_db
+
+    # ── Pipeline completo ────────────────────────────────────────────────────
+
+    @pytest.mark.asyncio
+    async def test_processar_contrato_grava_silver(self):
+        """_processar_contrato() upserta em silver_contratos."""
+        from kafka.consumer import _processar_contrato
+
+        contrato = self._make_contrato(
+            orgaoEntidade={"cnpj": "04926214000174", "razaoSocial": "Prefeitura SP"}
+        )
+        mock_db = self._make_mock_db()
+
+        await _processar_contrato(contrato, mock_db)
+
+        mock_db.silver_contratos.update_one.assert_called_once()
+        call_args = mock_db.silver_contratos.update_one.call_args
+        assert call_args[1]["upsert"] is True
+        doc_silver = call_args[0][1]["$set"]
+        assert doc_silver["orgao_cnpj"] == "04926214000174"
+        assert doc_silver["orgao_nome"] == "Prefeitura SP"
+        assert "orgaoEntidade" not in doc_silver
+
+    @pytest.mark.asyncio
+    async def test_processar_contrato_grava_gold_mei_dentro_limite(self):
+        """Contrato com valorInicial ≤ 80.000 deve upsert em gold_contratos_mei."""
+        from kafka.consumer import _processar_contrato
+
+        contrato = self._make_contrato(valorInicial=50000.0)
+        mock_db = self._make_mock_db()
+
+        await _processar_contrato(contrato, mock_db)
+
+        mock_db.gold_contratos_mei.update_one.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_processar_contrato_nao_grava_gold_mei_acima_limite(self):
+        """Contrato com valorInicial > 80.000 NÃO deve aparecer em gold_contratos_mei."""
+        from kafka.consumer import _processar_contrato
+
+        contrato = self._make_contrato(valorInicial=150000.0)
+        mock_db = self._make_mock_db()
+
+        await _processar_contrato(contrato, mock_db)
+
+        mock_db.gold_contratos_mei.update_one.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_processar_contrato_incrementa_gold_top_orgaos(self):
+        """Cada contrato incrementa $inc em gold_top_orgaos para o órgão."""
+        from kafka.consumer import _processar_contrato
+
+        contrato = self._make_contrato(
+            orgaoEntidade={"cnpj": "04926214000174", "razaoSocial": "Prefeitura SP"},
+            valorInicial=30000.0,
+        )
+        mock_db = self._make_mock_db()
+
+        await _processar_contrato(contrato, mock_db)
+
+        mock_db.gold_top_orgaos.update_one.assert_called_once()
+        call = mock_db.gold_top_orgaos.update_one.call_args
+        assert call[0][0] == {"orgao_nome": "Prefeitura SP"}
+        assert call[0][1]["$inc"]["count"] == 1
+        assert call[0][1]["$inc"]["valor_total"] == 30000.0
+        assert call[1]["upsert"] is True
+
+    @pytest.mark.asyncio
+    async def test_processar_contrato_dispara_notificacao(self):
+        """Contrato que bate com alerta deve gerar notificação."""
+        from kafka.consumer import _processar_contrato
+
+        alerta = self._make_alerta(valor_max=80000.0)
+        contrato = self._make_contrato(valorInicial=15000.0)
+        mock_db = self._make_mock_db(alertas=[alerta])
+
+        await _processar_contrato(contrato, mock_db)
+
+        mock_db.notificacoes.insert_one.assert_called_once()
+
+    # ── Inicialização ────────────────────────────────────────────────────────
+
     @pytest.mark.asyncio
     async def test_iniciar_consumer_retorna_none_sem_kafka(self):
         """iniciar_consumer_alertas() retorna None se Kafka não configurado."""
