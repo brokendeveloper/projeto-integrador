@@ -24,8 +24,6 @@ import os
 from datetime import datetime, timezone
 from typing import Optional
 
-from pymongo import UpdateOne
-
 logger = logging.getLogger("licitame.kafka.consumer")
 
 _BOOTSTRAP = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "")
