@@ -1,0 +1,52 @@
+name: ETL Pipeline — PNCP
+
+on:
+  schedule:
+    # Diariamente às 03:00 UTC (00:00 BRT)
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+    inputs:
+      data_inicial:
+        description: "Data inicial (YYYYMMDD). Deixe em branco para usar os últimos 7 dias."
+        required: false
+        default: ""
+      data_final:
+        description: "Data final (YYYYMMDD). Deixe em branco para usar hoje."
+        required: false
+        default: ""
+
+jobs:
+  etl:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependências
+        run: pip install -r requirements.txt
+
+      - name: Executar pipeline ETL
+        env:
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          MONGODB_DB: ${{ secrets.MONGODB_DB_NAME }}
+          KAFKA_BOOTSTRAP_SERVERS: ${{ secrets.KAFKA_BOOTSTRAP_SERVERS }}
+          KAFKA_USERNAME: ${{ secrets.KAFKA_USERNAME }}
+          KAFKA_PASSWORD: ${{ secrets.KAFKA_PASSWORD }}
+          KAFKA_SASL_MECHANISM: ${{ secrets.KAFKA_SASL_MECHANISM }}
+          KAFKA_TOPIC_CONTRATOS: ${{ secrets.KAFKA_TOPIC_CONTRATOS }}
+          PNCP_MAX_RECORDS: "10000"
+          DATA_INICIAL: ${{ github.event.inputs.data_inicial }}
+          DATA_FINAL: ${{ github.event.inputs.data_final }}
+        run: |
+          python3 -c "
+          from etl.pipeline import ETLPipeline
+          import os
+          data_inicial = os.getenv('DATA_INICIAL') or None
+          data_final   = os.getenv('DATA_FINAL')   or None
+          ETLPipeline(data_inicial=data_inicial, data_final=data_final).run()
+          "
