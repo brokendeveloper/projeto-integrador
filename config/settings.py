@@ -9,6 +9,7 @@ load_dotenv()
 PNCP_BASE_URL: str = os.getenv("PNCP_BASE_URL", "https://pncp.gov.br/api/consulta/v1")
 PNCP_TIMEOUT: int = int(os.getenv("PNCP_TIMEOUT", "30"))
 PNCP_PAGE_SIZE: int = int(os.getenv("PNCP_PAGE_SIZE", "50"))
+PNCP_MAX_RECORDS: int = int(os.getenv("PNCP_MAX_RECORDS", "10000"))
 
 MONGODB_URI: str = os.getenv("MONGODB_URI", "")
 MONGODB_DB: str = os.getenv("MONGODB_DB", "pncp_etl")

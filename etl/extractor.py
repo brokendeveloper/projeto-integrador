@@ -6,7 +6,7 @@ from typing import Any
 import requests
 from tenacity import retry, stop_after_attempt, wait_exponential
 
-from config.settings import PNCP_BASE_URL, PNCP_PAGE_SIZE, PNCP_TIMEOUT
+from config.settings import PNCP_BASE_URL, PNCP_MAX_RECORDS, PNCP_PAGE_SIZE, PNCP_TIMEOUT
 from utils.logger import get_logger
 
 
@@ -24,6 +24,7 @@ class PNCPExtractor:
         self.page_size = PNCP_PAGE_SIZE
         self.session = requests.Session()
         self.session.headers.update({"Accept": "application/json"})
+        self.max_records = PNCP_MAX_RECORDS
         self.logger = get_logger(self.__class__.__name__)
         self.logger.info("PNCPExtractor inicializado. Base URL: %s", self.base_url)
 
@@ -98,10 +99,16 @@ class PNCPExtractor:
             if len(records) < self.page_size:
                 break
 
+            if len(results) >= self.max_records:
+                self.logger.info(
+                    "Limite de %d registros atingido — parando extração.", self.max_records
+                )
+                break
+
             params["pagina"] += 1
             time.sleep(0.5)
 
-        return results
+        return results[:self.max_records]
 
     def fetch_contratos(self, data_inicial: str, data_final: str) -> list[dict[str, Any]]:
         """Busca contratos publicados no PNCP dentro do intervalo de datas.
