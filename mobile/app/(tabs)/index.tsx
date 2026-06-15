@@ -205,10 +205,9 @@ const onRefresh = useCallback(async () => {
         onEndReached={handleProximaPagina}
         onEndReachedThreshold={0.4}
         refreshControl={
-          <RefreshControl
-            refreshing={carregando && pagina === 1}
-            onRefresh={() => buscarEditais(1, true)}
-            tintColor={Colors.primary}
+          <RefreshControl 
+            refreshing={refreshing} 
+            onRefresh={onRefresh} 
           />
         }
         ListFooterComponent={
