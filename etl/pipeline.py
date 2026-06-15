@@ -77,13 +77,19 @@ class ETLPipeline:
             # Carga — SQLite (diferencial)
             total_sqlite = self.sqlite_loader.load(transformed)
 
+            # Publicação no Kafka (opcional — ativo apenas se KAFKA_BOOTSTRAP_SERVERS definido)
+            from kafka.producer import publicar_contratos
+            total_kafka = publicar_contratos(transformed)
+
             fim = datetime.now(timezone.utc)
             duracao = (fim - inicio).total_seconds()
+            kafka_info = f" | Kafka: {total_kafka}" if total_kafka else ""
             self.logger.info(
-                "=== Pipeline concluído em %.2fs | MongoDB: %d | SQLite: %d ===",
+                "=== Pipeline concluído em %.2fs | MongoDB: %d | SQLite: %d%s ===",
                 duracao,
                 total_mongo,
                 total_sqlite,
+                kafka_info,
             )
 
         except Exception as exc:

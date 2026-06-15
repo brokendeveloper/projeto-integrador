@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        env:
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+        env:
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+      - name: Instalar dependências
+        run: pip install -r requirements.txt
+
+      - name: Instalar pip-audit
+        run: pip install pip-audit
+
+      - name: Auditar vulnerabilidades nas dependências
+        # CVEs ignorados com justificativa documentada:
+        # PYSEC-2025-185: python-jose — sem versão de correção disponível
+        # CVE-2025-71176: pytest — ferramenta de teste apenas, não afeta produção
+        # CVE-2026-30922: pyasn1 — python-jose 3.4.0 exige pyasn1<0.5.0, impossível atualizar sem trocar biblioteca JWT
+        run: pip-audit --requirement requirements.txt --ignore-vuln PYSEC-2025-185 --ignore-vuln CVE-2025-71176 --ignore-vuln CVE-2026-30922
+
+      - name: Rodar testes
+        env:
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          MONGODB_DB_NAME: pncp_test
+          JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
+          JWT_ALGORITHM: HS256
+          JWT_EXPIRE_MINUTES: "60"
+        run: pytest tests/ -v --tb=short
