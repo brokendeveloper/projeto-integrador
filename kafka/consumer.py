@@ -57,6 +57,12 @@ async def iniciar_consumer_alertas(db) -> "Optional[asyncio.Task]":
         )
         return None
 
+    # Garante índices únicos nas camadas Silver e Gold antes de iniciar o streaming
+    await db.silver_contratos.create_index("numeroControlePNCP", unique=True, sparse=True)
+    await db.gold_contratos_mei.create_index("numeroControlePNCP", unique=True, sparse=True)
+    await db.gold_top_orgaos.create_index("orgao_nome", unique=True, sparse=True)
+    logger.info("Índices únicos verificados: silver_contratos, gold_contratos_mei, gold_top_orgaos.")
+
     task = asyncio.create_task(_loop_consumer(db))
     logger.info(
         "Kafka consumer iniciado. Tópico: '%s', Group: '%s'. "

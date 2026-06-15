@@ -41,32 +41,48 @@ def _salvar_camadas_mongodb(
         df_mei: DataFrame pandas com contratos filtrados para MEI.
         df_top: DataFrame pandas com ranking de órgãos.
     """
+    from pymongo import UpdateOne
+
     uri = os.getenv("MONGODB_URI", "")
     db_name = os.getenv("MONGODB_DB", "pncp_etl")
     client = pymongo.MongoClient(uri)
     try:
         db = client[db_name]
 
-        # Silver — todos os contratos com schema plano
+        # Garante índices únicos antes de qualquer escrita
+        db["silver_contratos"].create_index("numeroControlePNCP", unique=True, sparse=True)
+        db["gold_contratos_mei"].create_index("numeroControlePNCP", unique=True, sparse=True)
+        db["gold_top_orgaos"].create_index("orgao_nome", unique=True, sparse=True)
+
+        # Silver — upsert por numeroControlePNCP (sem drop, preserva histórico streaming)
         silver_docs = df_silver.where(pd.notnull(df_silver), None).to_dict("records")
-        db["silver_contratos"].drop()
         if silver_docs:
-            db["silver_contratos"].insert_many(silver_docs)
-        print(f"✓ silver_contratos: {len(silver_docs)} documentos gravados.")
+            ops = [
+                UpdateOne({"numeroControlePNCP": d.get("numeroControlePNCP")}, {"$set": d}, upsert=True)
+                for d in silver_docs
+            ]
+            db["silver_contratos"].bulk_write(ops, ordered=False)
+        print(f"✓ silver_contratos: {len(silver_docs)} documentos upserted.")
 
-        # Gold — contratos favoráveis ao MEI
+        # Gold MEI — upsert por numeroControlePNCP
         mei_docs = df_mei.where(pd.notnull(df_mei), None).to_dict("records")
-        db["gold_contratos_mei"].drop()
         if mei_docs:
-            db["gold_contratos_mei"].insert_many(mei_docs)
-        print(f"✓ gold_contratos_mei: {len(mei_docs)} documentos gravados.")
+            ops = [
+                UpdateOne({"numeroControlePNCP": d.get("numeroControlePNCP")}, {"$set": d}, upsert=True)
+                for d in mei_docs
+            ]
+            db["gold_contratos_mei"].bulk_write(ops, ordered=False)
+        print(f"✓ gold_contratos_mei: {len(mei_docs)} documentos upserted.")
 
-        # Gold — ranking de órgãos
+        # Gold Top Órgãos — upsert por orgao_nome com valores absolutos do batch
         top_docs = df_top.where(pd.notnull(df_top), None).to_dict("records")
-        db["gold_top_orgaos"].drop()
         if top_docs:
-            db["gold_top_orgaos"].insert_many(top_docs)
-        print(f"✓ gold_top_orgaos: {len(top_docs)} documentos gravados.")
+            ops = [
+                UpdateOne({"orgao_nome": d.get("orgao_nome")}, {"$set": d}, upsert=True)
+                for d in top_docs
+            ]
+            db["gold_top_orgaos"].bulk_write(ops, ordered=False)
+        print(f"✓ gold_top_orgaos: {len(top_docs)} documentos upserted.")
 
     finally:
         client.close()
