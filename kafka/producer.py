@@ -13,11 +13,34 @@ logger = logging.getLogger("licitame.kafka.producer")
 
 _BOOTSTRAP = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "")
 _TOPIC = os.getenv("KAFKA_TOPIC_CONTRATOS", "pncp.contratos.novos")
+_USERNAME = os.getenv("KAFKA_USERNAME", "")
+_PASSWORD = os.getenv("KAFKA_PASSWORD", "")
+
+
+def _build_config() -> dict:
+    """Constrói configuração do producer.
+
+    Se KAFKA_USERNAME e KAFKA_PASSWORD estiverem definidos, adiciona SASL/SSL
+    (necessário para Upstash, Confluent Cloud e outros serviços gerenciados).
+    Sem as variáveis, usa PLAINTEXT (Docker local).
+    """
+    cfg: dict = {"bootstrap.servers": _BOOTSTRAP}
+    if _USERNAME and _PASSWORD:
+        cfg.update(
+            {
+                "security.protocol": "SASL_SSL",
+                "sasl.mechanisms": "SCRAM-SHA-256",
+                "sasl.username": _USERNAME,
+                "sasl.password": _PASSWORD,
+            }
+        )
+    return cfg
+
 
 try:
     from confluent_kafka import Producer as _Producer
 
-    _producer: "_Producer | None" = _Producer({"bootstrap.servers": _BOOTSTRAP}) if _BOOTSTRAP else None
+    _producer: "_Producer | None" = _Producer(_build_config()) if _BOOTSTRAP else None
 except ImportError:
     _Producer = None  # type: ignore[assignment,misc]
     _producer = None

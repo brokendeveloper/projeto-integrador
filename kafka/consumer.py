@@ -29,6 +29,8 @@ logger = logging.getLogger("licitame.kafka.consumer")
 _BOOTSTRAP = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "")
 _TOPIC = os.getenv("KAFKA_TOPIC_CONTRATOS", "pncp.contratos.novos")
 _GROUP_ID = os.getenv("KAFKA_GROUP_ID", "licitame-alertas")
+_USERNAME = os.getenv("KAFKA_USERNAME", "")
+_PASSWORD = os.getenv("KAFKA_PASSWORD", "")
 _LIMITE_MEI = 80_000.0
 
 try:
@@ -68,14 +70,22 @@ async def iniciar_consumer_alertas(db) -> "Optional[asyncio.Task]":
 
 async def _loop_consumer(db) -> None:
     loop = asyncio.get_event_loop()
-    consumer = _Consumer(
-        {
-            "bootstrap.servers": _BOOTSTRAP,
-            "group.id": _GROUP_ID,
-            "auto.offset.reset": "latest",
-            "enable.auto.commit": True,
-        }
-    )
+    cfg: dict = {
+        "bootstrap.servers": _BOOTSTRAP,
+        "group.id": _GROUP_ID,
+        "auto.offset.reset": "latest",
+        "enable.auto.commit": True,
+    }
+    if _USERNAME and _PASSWORD:
+        cfg.update(
+            {
+                "security.protocol": "SASL_SSL",
+                "sasl.mechanisms": "SCRAM-SHA-256",
+                "sasl.username": _USERNAME,
+                "sasl.password": _PASSWORD,
+            }
+        )
+    consumer = _Consumer(cfg)
     consumer.subscribe([_TOPIC])
     logger.debug("Consumer subscrito ao tópico '%s'.", _TOPIC)
 
