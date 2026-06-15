@@ -15,13 +15,15 @@ _BOOTSTRAP = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "")
 _TOPIC = os.getenv("KAFKA_TOPIC_CONTRATOS", "pncp.contratos.novos")
 _USERNAME = os.getenv("KAFKA_USERNAME", "")
 _PASSWORD = os.getenv("KAFKA_PASSWORD", "")
+# Confluent Cloud → PLAIN  |  Upstash → SCRAM-SHA-256
+_SASL_MECHANISM = os.getenv("KAFKA_SASL_MECHANISM", "PLAIN")
 
 
 def _build_config() -> dict:
     """Constrói configuração do producer.
 
     Se KAFKA_USERNAME e KAFKA_PASSWORD estiverem definidos, adiciona SASL/SSL
-    (necessário para Upstash, Confluent Cloud e outros serviços gerenciados).
+    (necessário para Confluent Cloud, Upstash e outros serviços gerenciados).
     Sem as variáveis, usa PLAINTEXT (Docker local).
     """
     cfg: dict = {"bootstrap.servers": _BOOTSTRAP}
@@ -29,7 +31,7 @@ def _build_config() -> dict:
         cfg.update(
             {
                 "security.protocol": "SASL_SSL",
-                "sasl.mechanisms": "SCRAM-SHA-256",
+                "sasl.mechanisms": _SASL_MECHANISM,
                 "sasl.username": _USERNAME,
                 "sasl.password": _PASSWORD,
             }

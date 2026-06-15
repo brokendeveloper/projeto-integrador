@@ -31,6 +31,7 @@ _TOPIC = os.getenv("KAFKA_TOPIC_CONTRATOS", "pncp.contratos.novos")
 _GROUP_ID = os.getenv("KAFKA_GROUP_ID", "licitame-alertas")
 _USERNAME = os.getenv("KAFKA_USERNAME", "")
 _PASSWORD = os.getenv("KAFKA_PASSWORD", "")
+_SASL_MECHANISM = os.getenv("KAFKA_SASL_MECHANISM", "PLAIN")
 _LIMITE_MEI = 80_000.0
 
 try:
@@ -80,7 +81,7 @@ async def _loop_consumer(db) -> None:
         cfg.update(
             {
                 "security.protocol": "SASL_SSL",
-                "sasl.mechanisms": "SCRAM-SHA-256",
+                "sasl.mechanisms": _SASL_MECHANISM,
                 "sasl.username": _USERNAME,
                 "sasl.password": _PASSWORD,
             }
