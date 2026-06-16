@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { api } from "../services/api";
 import { Colors, Radius, Spacing, Shadow } from "../constants/theme";
+import Constants from 'expo-constants';
 
 interface Config {
   notificacoes_email: boolean;
@@ -127,7 +128,7 @@ export default function ConfiguracoesScreen() {
         <Text style={styles.secaoTitulo}>Sobre o app</Text>
         <View style={styles.infoRow}>
           <Text style={styles.infoLabel}>Versão</Text>
-          <Text style={styles.infoValor}>1.0.0</Text>
+          <Text style={styles.infoValor}>{Constants.expoConfig?.version ?? "1.0.0"}</Text>
         </View>
         <View style={styles.separador} />
         <View style={styles.infoRow}>

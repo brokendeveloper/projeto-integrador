@@ -54,6 +54,13 @@ export default function EditaisScreen() {
   const [pagina, setPagina] = useState(1);
   const [totalPaginas, setTotalPaginas] = useState(1);
   const [total, setTotal] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
+
+const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await buscarEditais(1, true);
+    setRefreshing(false);
+  }, []);
 
   async function buscarEditais(pag = 1, reset = false) {
     setCarregando(true);
@@ -198,9 +205,10 @@ export default function EditaisScreen() {
         onEndReached={handleProximaPagina}
         onEndReachedThreshold={0.4}
         refreshControl={
-          <RefreshControl
-            refreshing={carregando && pagina === 1}
-            onRefresh={() => buscarEditais(1, true)}
+          <RefreshControl 
+            refreshing={refreshing} 
+            onRefresh={onRefresh}
+            colors={[Colors.primary]}
             tintColor={Colors.primary}
           />
         }
