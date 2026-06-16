@@ -8,12 +8,16 @@ updates:
       day: "monday"
       time: "09:00"
       timezone: "America/Sao_Paulo"
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 2
     labels:
       - "dependências"
       - "segurança"
     commit-message:
       prefix: "build(deps)"
+    groups:
+      python-deps:
+        patterns:
+          - "*"
 
   # Dependências npm do app mobile
   - package-ecosystem: "npm"
@@ -23,9 +27,13 @@ updates:
       day: "monday"
       time: "09:00"
       timezone: "America/Sao_Paulo"
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 2
     labels:
       - "dependências"
       - "mobile"
     commit-message:
       prefix: "build(deps)"
+    groups:
+      mobile-deps:
+        patterns:
+          - "*"
