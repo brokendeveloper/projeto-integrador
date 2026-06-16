@@ -208,7 +208,8 @@ const onRefresh = useCallback(async () => {
           <RefreshControl 
             refreshing={refreshing} 
             onRefresh={onRefresh}
-            colors={[Colors.primary]} 
+            colors={[Colors.primary]}
+            tintColor={Colors.primary}
           />
         }
         ListFooterComponent={
