@@ -1,0 +1,37 @@
+name: Deploy SquareCloud
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "api/**"
+      - "config/**"
+      - "utils/**"
+      - "kafka/**"
+      - "requirements.txt"
+      - "squarecloud.app"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy para SquareCloud
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Instalar SquareCloud CLI
+        run: npm install -g @squarecloud/cli
+
+      - name: Gerar zip do projeto
+        run: squarecloud zip
+
+      - name: Deploy para SquareCloud
+        env:
+          SQUARECLOUD_KEY: ${{ secrets.SQUARECLOUD_KEY }}
+        run: squarecloud commit --file squarecloud.zip --restart
