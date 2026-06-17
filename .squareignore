@@ -60,7 +60,7 @@ docs/
 
 # ETL (roda via cron separado no workflow)
 etl/
-main.py
+/main.py
 
 # Secrets
 .env
