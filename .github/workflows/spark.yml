@@ -1,0 +1,43 @@
+name: Spark Batch — Recalculo Gold
+
+on:
+  schedule:
+    # Diariamente às 04:00 UTC — 1h depois do ETL (03:00 UTC)
+    - cron: "0 4 * * *"
+  workflow_dispatch:
+
+jobs:
+  spark:
+    name: PySpark Batch
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Configurar Java (PySpark)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Instalar dependências
+        run: pip install -r requirements.txt
+
+      - name: Executar PySpark batch
+        env:
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          MONGODB_DB: ${{ secrets.MONGODB_DB_NAME }}
+        run: python spark/pyspark_transform.py
+
+      - name: Salvar CSVs Gold como artefato
+        uses: actions/upload-artifact@v4
+        with:
+          name: spark-gold-${{ github.run_id }}
+          path: spark/output/
+          retention-days: 30
