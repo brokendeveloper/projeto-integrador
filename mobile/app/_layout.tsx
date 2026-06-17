@@ -46,6 +46,10 @@ function RootNavigation() {
         name="ajuda"
         options={{ title: "Ajuda & Suporte", ...HEADER_DARK }}
       />
+      <Stack.Screen
+        name="edital/[id]"
+        options={{ headerShown: false }}
+      />
     </Stack>
   );
 }
