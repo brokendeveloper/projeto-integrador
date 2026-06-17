@@ -104,7 +104,7 @@ const onRefresh = useCallback(async () => {
     return (
       <TouchableOpacity
         style={[styles.card, favoravel && styles.cardFavoravel]}
-        onPress={() => router.push({ pathname: "/(tabs)/checklist", params: { editalId: item.id } })}
+        onPress={() => router.push(`/edital/${item.id}`)}
         activeOpacity={0.75}
       >
         {favoravel && (
@@ -146,8 +146,8 @@ const onRefresh = useCallback(async () => {
         ) : null}
 
         <View style={styles.checklistHint}>
-          <Ionicons name="checkbox-outline" size={12} color={Colors.primary} />
-          <Text style={styles.checklistHintTexto}>Ver checklist de habilitação</Text>
+          <Ionicons name="eye-outline" size={12} color={Colors.primary} />
+          <Text style={styles.checklistHintTexto}>Ver detalhes do edital</Text>
           <Ionicons name="chevron-forward" size={12} color={Colors.primary} />
         </View>
       </TouchableOpacity>
