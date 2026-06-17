@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>LicitaME — Engenharia de Dados</title>
+<style>
+  :root {
+    --blue:    #2563EB;
+    --blueDk:  #1E3A8A;
+    --blueLt:  #DBEAFE;
+    --silver:  #64748B;
+    --gold:    #D97706;
+    --goldLt:  #FEF3C7;
+    --green:   #059669;
+    --greenLt: #D1FAE5;
+    --purple:  #7C3AED;
+    --purpleLt:#EDE9FE;
+    --bg:      #F1F5F9;
+    --white:   #FFFFFF;
+    --text:    #0F172A;
+    --textSec: #64748B;
+    --border:  #E2E8F0;
+    --radius:  14px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow: hidden;
+  }
+
+  /* ── Slide container ── */
+  .deck { width: 100vw; height: 100vh; position: relative; }
+
+  .slide {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0; left: 0;
+    display: none;
+    flex-direction: column;
+    padding: 48px 64px;
+    animation: fadeIn .35s ease;
+  }
+  .slide.active { display: flex; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── Navigation ── */
+  .nav {
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 40px;
+    padding: 10px 24px;
+    box-shadow: 0 4px 20px rgba(0,0,0,.08);
+    z-index: 100;
+  }
+  .nav button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 18px;
+    color: var(--blue);
+    padding: 4px 8px;
+    border-radius: 8px;
+    transition: background .15s;
+  }
+  .nav button:hover { background: var(--blueLt); }
+  .nav button:disabled { color: var(--border); cursor: default; }
+  .nav button:disabled:hover { background: none; }
+  #counter { font-size: 13px; color: var(--textSec); min-width: 56px; text-align: center; }
+
+  .dots {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+  .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--border);
+    cursor: pointer;
+    transition: background .2s, transform .2s;
+  }
+  .dot.active { background: var(--blue); transform: scale(1.3); }
+
+  /* ── Typography ── */
+  .tag {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    padding: 4px 12px;
+    border-radius: 20px;
+    margin-bottom: 16px;
+  }
+  .tag-blue   { background: var(--blueLt);   color: var(--blue); }
+  .tag-gold   { background: var(--goldLt);   color: var(--gold); }
+  .tag-green  { background: var(--greenLt);  color: var(--green); }
+  .tag-purple { background: var(--purpleLt); color: var(--purple); }
+
+  h1 {
+    font-size: clamp(28px, 4vw, 48px);
+    font-weight: 800;
+    line-height: 1.15;
+    color: var(--text);
+  }
+  h2 {
+    font-size: clamp(20px, 2.5vw, 32px);
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+  h3 { font-size: 16px; font-weight: 700; margin-bottom: 6px; color: var(--text); }
+  p  { font-size: 15px; line-height: 1.65; color: var(--textSec); }
+
+  .lead {
+    font-size: clamp(16px, 1.8vw, 22px);
+    color: var(--textSec);
+    margin-top: 12px;
+    line-height: 1.5;
+    max-width: 700px;
+  }
+
+  /* ── Layout helpers ── */
+  .row   { display: flex; gap: 20px; flex: 1; }
+  .col   { display: flex; flex-direction: column; gap: 16px; flex: 1; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; flex: 1; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; flex: 1; }
+
+  .spacer { flex: 1; }
+  .mt16 { margin-top: 16px; }
+  .mt24 { margin-top: 24px; }
+  .mt32 { margin-top: 32px; }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .card.blue-border   { border-left: 4px solid var(--blue); }
+  .card.gold-border   { border-left: 4px solid var(--gold); }
+  .card.green-border  { border-left: 4px solid var(--green); }
+  .card.purple-border { border-left: 4px solid var(--purple); }
+
+  .icon { font-size: 28px; }
+  .num  { font-size: 36px; font-weight: 800; }
+  .num.blue   { color: var(--blue); }
+  .num.gold   { color: var(--gold); }
+  .num.green  { color: var(--green); }
+  .num.purple { color: var(--purple); }
+
+  /* ── Code / pipeline blocks ── */
+  .code {
+    background: #0F172A;
+    color: #E2E8F0;
+    border-radius: 10px;
+    padding: 20px 24px;
+    font-family: 'Consolas', monospace;
+    font-size: 13px;
+    line-height: 1.7;
+    overflow-x: auto;
+  }
+  .code .c-blue   { color: #60A5FA; }
+  .code .c-green  { color: #34D399; }
+  .code .c-yellow { color: #FBBF24; }
+  .code .c-purple { color: #A78BFA; }
+  .code .c-gray   { color: #94A3B8; }
+
+  /* ── Pipeline diagram ── */
+  .pipeline {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin: 20px 0;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+  .pipe-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    min-width: 110px;
+  }
+  .pipe-box {
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-size: 12px;
+    font-weight: 700;
+    text-align: center;
+    width: 100%;
+  }
+  .pipe-box.bronze  { background: #FEF3C7; color: #92400E; border: 2px solid #D97706; }
+  .pipe-box.silver  { background: #F1F5F9; color: #334155; border: 2px solid #64748B; }
+  .pipe-box.gold    { background: #FEF9C3; color: #713F12; border: 2px solid #CA8A04; }
+  .pipe-box.blue    { background: var(--blueLt); color: var(--blueDk); border: 2px solid var(--blue); }
+  .pipe-box.purple  { background: var(--purpleLt); color: var(--purple); border: 2px solid var(--purple); }
+  .pipe-box.green   { background: var(--greenLt); color: #064E3B; border: 2px solid var(--green); }
+  .pipe-label { font-size: 11px; color: var(--textSec); text-align: center; }
+  .pipe-arrow {
+    font-size: 20px;
+    color: var(--textSec);
+    padding: 0 6px;
+    flex-shrink: 0;
+    margin-bottom: 20px;
+  }
+
+  /* ── Table ── */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th {
+    background: var(--bg);
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .6px;
+    text-transform: uppercase;
+    color: var(--textSec);
+    border-bottom: 2px solid var(--border);
+  }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--text); }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--bg); }
+
+  /* ── Badge ── */
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .badge-blue   { background: var(--blueLt);   color: var(--blue); }
+  .badge-gold   { background: var(--goldLt);   color: var(--gold); }
+  .badge-green  { background: var(--greenLt);  color: var(--green); }
+  .badge-purple { background: var(--purpleLt); color: var(--purple); }
+  .badge-gray   { background: var(--border);   color: var(--textSec); }
+
+  /* ── Hero slide ── */
+  .hero-slide {
+    background: linear-gradient(135deg, #1E3A8A 0%, #2563EB 60%, #3B82F6 100%);
+    color: white;
+    justify-content: center;
+    align-items: flex-start;
+  }
+  .hero-slide h1  { color: white; }
+  .hero-slide .lead { color: rgba(255,255,255,.75); }
+  .hero-slide p   { color: rgba(255,255,255,.70); }
+
+  .hero-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,.12);
+    border: 1px solid rgba(255,255,255,.25);
+    border-radius: 30px;
+    padding: 6px 16px;
+    font-size: 13px;
+    color: rgba(255,255,255,.9);
+    margin-bottom: 28px;
+  }
+
+  .hero-stats {
+    display: flex;
+    gap: 40px;
+    margin-top: 40px;
+  }
+  .hero-stat-num { font-size: 36px; font-weight: 800; color: white; }
+  .hero-stat-lbl { font-size: 13px; color: rgba(255,255,255,.65); margin-top: 2px; }
+
+  /* ── List ── */
+  .list { display: flex; flex-direction: column; gap: 10px; }
+  .list-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 18px;
+  }
+  .list-item-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+  .list-item-text h4 { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
+  .list-item-text p  { font-size: 13px; }
+
+  /* ── Tool cards ── */
+  .tool-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    flex: 1;
+  }
+  .tool-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+  }
+  .tool-name  { font-family: monospace; font-size: 13px; font-weight: 700; color: var(--blue); margin-bottom: 6px; }
+  .tool-desc  { font-size: 13px; color: var(--textSec); margin-bottom: 10px; }
+  .tool-param { font-size: 11px; background: var(--bg); border-radius: 6px; padding: 4px 8px; display: inline-block; font-family: monospace; color: var(--textSec); margin-right: 4px; }
+
+  /* ── Kafka roadmap ── */
+  .roadmap { display: flex; flex-direction: column; gap: 0; flex: 1; }
+  .roadmap-item {
+    display: flex;
+    gap: 20px;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .roadmap-item:last-child { border-bottom: none; }
+  .roadmap-step {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 800; flex-shrink: 0;
+  }
+  .step-done    { background: var(--greenLt); color: var(--green); }
+  .step-roadmap { background: var(--goldLt);  color: var(--gold); }
+  .roadmap-content h4 { font-size: 14px; font-weight: 700; margin-bottom: 3px; }
+  .roadmap-content p  { font-size: 13px; color: var(--textSec); }
+
+  /* ── Log block ── */
+  .log {
+    background: #0F172A;
+    border-radius: 10px;
+    padding: 18px 22px;
+    font-family: monospace;
+    font-size: 12px;
+    line-height: 1.8;
+    color: #CBD5E1;
+    flex: 1;
+  }
+  .log .info    { color: #34D399; }
+  .log .warn    { color: #FBBF24; }
+  .log .error   { color: #F87171; }
+  .log .dim     { color: #475569; }
+  .log .highlight { color: #60A5FA; }
+</style>
+</head>
+<body>
+
+<div class="deck">
+
+  <!-- ══ SLIDE 1 — CAPA ══════════════════════════════════════════════════════ -->
+  <div class="slide hero-slide active">
+    <div class="hero-pill">📊 Engenharia de Dados · LicitaME · 2026</div>
+    <h1>Pipeline de Dados<br>do LicitaME</h1>
+    <p class="lead">Arquitetura Medallion · PySpark · MongoDB · MCP Server · Chatbot com IA</p>
+    <div class="hero-stats">
+      <div>
+        <div class="hero-stat-num">801</div>
+        <div class="hero-stat-lbl">Contratos PNCP (Bronze)</div>
+      </div>
+      <div>
+        <div class="hero-stat-num">754</div>
+        <div class="hero-stat-lbl">Contratos MEI (Gold)</div>
+      </div>
+      <div>
+        <div class="hero-stat-num">3</div>
+        <div class="hero-stat-lbl">Camadas Medallion</div>
+      </div>
+      <div>
+        <div class="hero-stat-num">4</div>
+        <div class="hero-stat-lbl">Tools no Chatbot</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 2 — VISÃO GERAL ══════════════════════════════════════════════ -->
+  <div class="slide">
+    <span class="tag tag-blue">Arquitetura</span>
+    <h2>Visão Geral do Pipeline</h2>
+    <p>Dados percorrem 5 etapas desde a API pública até o app mobile e o chatbot.</p>
+
+    <div class="pipeline mt24">
+      <div class="pipe-step">
+        <div class="pipe-box blue">🌐 API PNCP<br><small>pncp.gov.br</small></div>
+        <div class="pipe-label">Fonte externa</div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step">
+        <div class="pipe-box blue">⚙️ ETL<br><small>extractor · transformer · loader</small></div>
+        <div class="pipe-label">Ingestão</div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step">
+        <div class="pipe-box bronze">🟤 Bronze<br><small>contratos (MongoDB)</small></div>
+        <div class="pipe-label">Raw</div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step">
+        <div class="pipe-box silver">⚪ Silver<br><small>PySpark + flatten</small></div>
+        <div class="pipe-label">Transformado</div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step">
+        <div class="pipe-box gold">🟡 Gold<br><small>CSV + MongoDB</small></div>
+        <div class="pipe-label">Agregado</div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step">
+        <div class="pipe-box purple">🤖 IA + API<br><small>Léo · Analytics</small></div>
+        <div class="pipe-label">Consumo</div>
+      </div>
+    </div>
+
+    <div class="grid3 mt16">
+      <div class="card blue-border">
+        <div class="icon">📥</div>
+        <h3>Extração</h3>
+        <p>Paginação automática + retry exponencial contra a API do PNCP. Contratos e atas.</p>
+      </div>
+      <div class="card blue-border">
+        <div class="icon">🔄</div>
+        <h3>Transformação</h3>
+        <p>Datas em ISO 8601, valores em float, campos de texto normalizados, nulos removidos.</p>
+      </div>
+      <div class="card blue-border">
+        <div class="icon">💾</div>
+        <h3>Carga dual</h3>
+        <p>Upsert no MongoDB Atlas + INSERT no SQLite local. Idempotente por <code>numeroControlePNCP</code>.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 3 — CAMADAS MEDALLION ════════════════════════════════════════ -->
+  <div class="slide">
+    <span class="tag tag-gold">Medallion Architecture</span>
+    <h2>Bronze · Silver · Gold no MongoDB</h2>
+
+    <div class="row mt24">
+      <div class="card" style="border-top: 4px solid #D97706; flex: 1">
+        <div style="font-size:24px">🟤</div>
+        <h3>Bronze — <code>contratos</code></h3>
+        <p>JSON bruto da API PNCP após normalização mínima. <code>orgaoEntidade</code> preservado como objeto aninhado.</p>
+        <div style="margin-top: 8px">
+          <span class="badge badge-gold">801 docs</span>
+          <span class="badge badge-gray" style="margin-left:6px">_etl_timestamp</span>
+          <span class="badge badge-gray" style="margin-left:6px">_source</span>
+        </div>
+      </div>
+      <div class="card" style="border-top: 4px solid #64748B; flex: 1">
+        <div style="font-size:24px">⚪</div>
+        <h3>Silver — <code>silver_contratos</code></h3>
+        <p>PySpark faz o flatten de <code>orgaoEntidade</code> → <code>orgao_cnpj</code> + <code>orgao_nome</code>. Schema tipado inferido.</p>
+        <div style="margin-top: 8px">
+          <span class="badge badge-gray">801 docs</span>
+          <span class="badge badge-gray" style="margin-left:6px">orgao_nome</span>
+          <span class="badge badge-gray" style="margin-left:6px">orgao_cnpj</span>
+        </div>
+      </div>
+      <div class="card" style="border-top: 4px solid #CA8A04; flex: 1">
+        <div style="font-size:24px">🟡</div>
+        <h3>Gold — <code>gold_*</code></h3>
+        <p>Dados agregados e filtrados, prontos para consumo direto. Recriados a cada run do PySpark.</p>
+        <div style="margin-top: 8px">
+          <span class="badge badge-green">754 MEI</span>
+          <span class="badge badge-gold" style="margin-left:6px">50 órgãos</span>
+          <span class="badge badge-gray" style="margin-left:6px">+ CSV</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mt16">
+      <table>
+        <tr>
+          <th>Coleção</th><th>Origem</th><th>Deduplicação</th><th>Transformação</th><th>Uso</th>
+        </tr>
+        <tr>
+          <td><code>contratos</code></td>
+          <td>ETL Python</td>
+          <td>Índice unique + upsert</td>
+          <td>Mínima (datas, valores)</td>
+          <td>API, PySpark, Chatbot</td>
+        </tr>
+        <tr>
+          <td><code>silver_contratos</code></td>
+          <td>PySpark</td>
+          <td>Upstream (Bronze)</td>
+          <td>Flatten JSON, schema tipado</td>
+          <td>Analytics, análise exploratória</td>
+        </tr>
+        <tr>
+          <td><code>gold_contratos_mei</code></td>
+          <td>PySpark</td>
+          <td>Upstream</td>
+          <td>Filtro valorInicial ≤ R$ 80k</td>
+          <td>Chatbot Léo, mobile</td>
+        </tr>
+        <tr>
+          <td><code>gold_top_orgaos</code></td>
+          <td>PySpark</td>
+          <td>Upstream</td>
+          <td>groupBy + count + sort</td>
+          <td>Dashboard, MCP</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 4 — PYSPARK ══════════════════════════════════════════════════ -->
+  <div class="slide">
+    <span class="tag tag-blue">Processamento Batch</span>
+    <h2>Pipeline PySpark — 5 Etapas</h2>
+
+    <div class="row mt24">
+      <div class="col" style="flex: 1.2">
+        <div class="code">
+<span class="c-gray"># [1/5] Leitura MongoDB → pandas → Spark</span>
+<span class="c-blue">pdf</span> = _carregar_contratos_mongodb()
+<span class="c-gray">#  └ flatten orgaoEntidade → orgao_cnpj, orgao_nome</span>
+<span class="c-blue">df</span>  = spark.createDataFrame(pdf)
+
+<span class="c-gray"># [2/5] Schema + amostra</span>
+df.printSchema()
+df.select(...).show(<span class="c-yellow">5</span>)
+
+<span class="c-gray"># [3/5] Estatísticas descritivas</span>
+df.filter(F.col(<span class="c-green">"valorInicial"</span>).isNotNull())
+  .select(<span class="c-green">"valorInicial"</span>)
+  .summary(<span class="c-green">"count","mean","stddev","min","25%","75%","max"</span>)
+
+<span class="c-gray"># [4/5] Gold CSV</span>
+df_mei.toPandas().to_csv(<span class="c-green">"contratos_mei.csv"</span>)
+df_top.toPandas().to_csv(<span class="c-green">"top_orgaos.csv"</span>)
+
+<span class="c-gray"># [5/5] Gold MongoDB</span>
+_salvar_camadas_mongodb(pdf_completo, pdf_mei, pdf_top)
+        </div>
+      </div>
+
+      <div class="col" style="flex: 0.9">
+        <div class="card green-border">
+          <h3>🔍 Deduplicação</h3>
+          <p>MongoDB garante unicidade via índice <code>unique</code> em <code>numeroControlePNCP</code> antes do PySpark. O Spark recebe dados já sem duplicatas.</p>
+        </div>
+        <div class="card gold-border">
+          <h3>📊 Transformações aplicadas</h3>
+          <div class="list" style="gap: 6px; margin-top: 4px">
+            <div style="font-size: 13px; padding: 4px 0; border-bottom: 1px solid var(--border)">📎 Flatten <code>orgaoEntidade</code> → colunas planas</div>
+            <div style="font-size: 13px; padding: 4px 0; border-bottom: 1px solid var(--border)">📈 Estatísticas: count, mean, stddev, min, 25%, 75%, max</div>
+            <div style="font-size: 13px; padding: 4px 0; border-bottom: 1px solid var(--border)">🏢 Ranking órgãos: groupBy + orderBy + limit</div>
+            <div style="font-size: 13px; padding: 4px 0; border-bottom: 1px solid var(--border)">📅 Série temporal: substring(data, 1, 7) por mês</div>
+            <div style="font-size: 13px; padding: 4px 0">💼 Filtro MEI: valorInicial > 0 AND ≤ 80.000</div>
+          </div>
+        </div>
+        <div class="card blue-border">
+          <h3>⚡ Execução via API</h3>
+          <p><code>POST /analytics/executar-spark</code> dispara como subprocesso assíncrono. Não bloqueia o servidor.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 5 — SQL ══════════════════════════════════════════════════════ -->
+  <div class="slide">
+    <span class="tag tag-green">SQL</span>
+    <h2>SQLite — Persistência Relacional Secundária</h2>
+    <p>O ETL grava simultaneamente no MongoDB Atlas (primário) e no SQLite local (análise offline).</p>
+
+    <div class="row mt24">
+      <div class="col" style="flex: 1">
+        <div class="code">
+<span class="c-purple">CREATE TABLE IF NOT EXISTS</span> contratos (
+  id                   <span class="c-blue">INTEGER</span> PRIMARY KEY,
+  numero_controle_pncp <span class="c-blue">TEXT</span>    <span class="c-green">UNIQUE</span>,
+  objeto_contrato      <span class="c-blue">TEXT</span>,
+  valor_inicial        <span class="c-blue">REAL</span>,
+  data_publicacao_pncp <span class="c-blue">TEXT</span>,
+  data_vigencia_inicio <span class="c-blue">TEXT</span>,
+  data_vigencia_fim    <span class="c-blue">TEXT</span>,
+  orgao_cnpj           <span class="c-blue">TEXT</span>,
+  orgao_razao_social   <span class="c-blue">TEXT</span>,
+  etl_timestamp        <span class="c-blue">TEXT</span>,
+  source               <span class="c-blue">TEXT</span>
+);
+
+<span class="c-gray">-- Deduplicação: INSERT OR IGNORE</span>
+<span class="c-purple">INSERT OR IGNORE INTO</span> contratos (...)
+<span class="c-purple">VALUES</span> (?, ?, ?, ...);
+
+<span class="c-gray">-- Exemplo de análise ad-hoc</span>
+<span class="c-purple">SELECT</span> orgao_razao_social,
+       <span class="c-yellow">COUNT</span>(*) total,
+       <span class="c-yellow">AVG</span>(valor_inicial) media
+<span class="c-purple">FROM</span>   contratos
+<span class="c-purple">WHERE</span>  valor_inicial &lt;= <span class="c-yellow">80000</span>
+<span class="c-purple">GROUP BY</span> orgao_razao_social
+<span class="c-purple">ORDER BY</span> total <span class="c-purple">DESC</span>;
+        </div>
+      </div>
+      <div class="col" style="flex: 0.8">
+        <div class="card">
+          <table>
+            <tr><th colspan="2">MongoDB vs SQLite</th></tr>
+            <tr><td><strong>Schema</strong></td><td>Dinâmico (JSON) vs Fixo (relacional)</td></tr>
+            <tr><td><strong>orgaoEntidade</strong></td><td>Aninhado vs Flat (<code>orgao_cnpj / razao_social</code>)</td></tr>
+            <tr><td><strong>Deduplicação</strong></td><td>Upsert vs INSERT OR IGNORE</td></tr>
+            <tr><td><strong>Acesso</strong></td><td>Motor async vs sqlite3 sync</td></tr>
+            <tr><td><strong>Uso</strong></td><td>API + PySpark vs Offline + SQL ad-hoc</td></tr>
+          </table>
+        </div>
+        <div class="card gold-border mt16">
+          <h3>💡 Por que SQLite?</h3>
+          <p>Permite análise exploratória dos dados sem depender de conexão com o MongoDB Atlas. Útil para demos offline e queries SQL rápidas durante o desenvolvimento.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 6 — BATCH VS STREAMING ══════════════════════════════════════ -->
+  <div class="slide">
+    <span class="tag tag-purple">Streaming vs Batch</span>
+    <h2>Por que Batch? Roadmap Kafka</h2>
+
+    <div class="grid2 mt24" style="flex: 0; margin-bottom: 20px">
+      <div class="card green-border">
+        <div style="font-size: 20px">✅</div>
+        <h3>Batch — escolha correta para o PNCP</h3>
+        <p>A API do PNCP é <strong>pull-based de atualização periódica</strong>. Órgãos publicam contratos em lotes diários ou semanais — não há eventos em tempo real. Kafka sobre essa fonte seria over-engineering sem ganho operacional.</p>
+      </div>
+      <div class="card blue-border">
+        <div style="font-size: 20px">⚡</div>
+        <h3>Near-realtime já existe</h3>
+        <p>Os endpoints <code>GET /analytics/estatisticas</code>, <code>top-orgaos</code> e <code>contratos-mei</code> consultam o MongoDB diretamente via Aggregation Pipeline — dados atualizados a cada request sem aguardar PySpark.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-bottom: 14px">🗺️ Roadmap — Arquitetura com Kafka</h3>
+      <div class="roadmap">
+        <div class="roadmap-item">
+          <div class="roadmap-step step-done">✓</div>
+          <div class="roadmap-content">
+            <h4>Batch ETL + PySpark <span class="badge badge-green" style="margin-left:8px">Implementado</span></h4>
+            <p>Pipeline completo: PNCP → ETL → Bronze → Silver → Gold. Camadas Medallion no MongoDB.</p>
+          </div>
+        </div>
+        <div class="roadmap-item">
+          <div class="roadmap-step step-done">✓</div>
+          <div class="roadmap-content">
+            <h4>Near-realtime via MongoDB Aggregation <span class="badge badge-green" style="margin-left:8px">Implementado</span></h4>
+            <p>4 endpoints de analytics consultam MongoDB diretamente, sem depender do batch PySpark.</p>
+          </div>
+        </div>
+        <div class="roadmap-item">
+          <div class="roadmap-step step-roadmap">→</div>
+          <div class="roadmap-content">
+            <h4>Kafka Producer <span class="badge badge-gold" style="margin-left:8px">Roadmap</span></h4>
+            <p>ETL adaptado para publicar contratos novos no tópico <code>pncp.contratos.novos</code> via <code>confluent-kafka</code>.</p>
+          </div>
+        </div>
+        <div class="roadmap-item">
+          <div class="roadmap-step step-roadmap">→</div>
+          <div class="roadmap-content">
+            <h4>Spark Structured Streaming <span class="badge badge-gold" style="margin-left:8px">Roadmap</span></h4>
+            <p>Consumidor Kafka → transformações Silver em near-realtime → upsert <code>silver_contratos</code>.</p>
+          </div>
+        </div>
+        <div class="roadmap-item">
+          <div class="roadmap-step step-roadmap">→</div>
+          <div class="roadmap-content">
+            <h4>Alertas via Streaming <span class="badge badge-gold" style="margin-left:8px">Roadmap</span></h4>
+            <p>FastAPI BackgroundTask consome tópico → filtra critérios do usuário → dispara push notification móvel.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 7 — LOGS ════════════════════════════════════════════════════ -->
+  <div class="slide">
+    <span class="tag tag-green">Observabilidade</span>
+    <h2>Gestão de Logs — Dois Sistemas</h2>
+
+    <div class="grid2 mt24" style="flex: 0; margin-bottom: 16px">
+      <div class="card blue-border">
+        <h3>ETL — <code>utils/logger.py</code></h3>
+        <p>Cada classe instancia <code>get_logger(self.__class__.__name__)</code>. Nível configurável via <code>LOG_LEVEL</code>.</p>
+        <p style="margin-top: 6px; font-family: monospace; font-size: 12px; background: var(--bg); padding: 6px 10px; border-radius: 6px">timestamp | LEVEL | ClassName | msg</p>
+      </div>
+      <div class="card purple-border">
+        <h3>API + Spark — <code>api/main.py</code></h3>
+        <p><code>logging.basicConfig</code> centralizado. Submódulos herdam com <code>getLogger("licitame.*")</code>.</p>
+        <p style="margin-top: 6px; font-family: monospace; font-size: 12px; background: var(--bg); padding: 6px 10px; border-radius: 6px">timestamp [LEVEL] nome: msg</p>
+      </div>
+    </div>
+
+    <div class="log">
+<span class="dim">2026-06-13 14:03:40</span> | <span class="info">INFO</span>  | <span class="highlight">ETLPipeline</span>   | === Pipeline ETL PNCP iniciado ===
+<span class="dim">2026-06-13 14:03:40</span> | <span class="info">INFO</span>  | <span class="highlight">PNCPExtractor</span>  | Extraindo contratos de 20260606 a 20260613
+<span class="dim">2026-06-13 14:03:41</span> | <span class="info">INFO</span>  | <span class="highlight">PNCPExtractor</span>  | Página 1 — 50 registros obtidos (total: 50)
+<span class="dim">2026-06-13 14:03:42</span> | <span class="info">INFO</span>  | <span class="highlight">PNCPTransformer</span>| 50 registros transformados com sucesso.
+<span class="dim">2026-06-13 14:03:42</span> | <span class="info">INFO</span>  | <span class="highlight">MongoLoader</span>    | Lote 1/1 — 50 documentos upserted.
+<span class="dim">2026-06-13 14:03:42</span> | <span class="info">INFO</span>  | <span class="highlight">SQLiteLoader</span>   | SQLite: 50 registros inseridos.
+<span class="dim">2026-06-13 14:03:42</span> | <span class="info">INFO</span>  | <span class="highlight">ETLPipeline</span>   | === Pipeline concluído em 2.14s | MongoDB: 50 | SQLite: 50 ===
+
+<span class="dim">2026-06-13 14:33:10</span> [<span class="info">INFO</span>] <span class="highlight">licitame</span>       : LicitaME API iniciando — conectando ao MongoDB...
+<span class="dim">2026-06-13 14:33:10</span> [<span class="info">INFO</span>] <span class="highlight">licitame</span>       : Conexão com MongoDB estabelecida. API pronta.
+<span class="dim">2026-06-13 14:33:15</span> [<span class="info">INFO</span>] <span class="highlight">licitame.spark</span>  : [SPARK] Pipeline iniciado em background (PID 4821).
+<span class="dim">2026-06-13 14:34:47</span> [<span class="info">INFO</span>] <span class="highlight">licitame.spark</span>  : [SPARK] Pipeline concluído com sucesso (PID 4821).
+<span class="dim">2026-06-13 14:34:50</span> [<span class="error">ERROR</span>] <span class="highlight">licitame.spark</span>  : [SPARK] Pipeline falhou (código 1): ModuleNotFoundError: No module named 'pyspark'
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 8 — MCP SERVER ══════════════════════════════════════════════ -->
+  <div class="slide">
+    <span class="tag tag-purple">MCP Server</span>
+    <h2>Model Context Protocol — 4 Ferramentas</h2>
+    <p>O MCP expõe as ferramentas de analytics em dois transports: HTTP REST e protocolo MCP nativo (Claude Desktop).</p>
+
+    <div class="tool-grid mt24">
+      <div class="tool-card">
+        <div class="tool-name">buscar_contratos</div>
+        <div class="tool-desc">Busca por palavra-chave no objeto do contrato usando regex case-insensitive no MongoDB.</div>
+        <span class="tool-param">palavra_chave*</span>
+        <span class="tool-param">limite=10</span>
+      </div>
+      <div class="tool-card">
+        <div class="tool-name">estatisticas_contratos</div>
+        <div class="tool-desc">Retorna total de contratos, valor médio, máximo e mínimo via MongoDB <code>$group</code> aggregation.</div>
+        <span class="tool-param">sem parâmetros</span>
+      </div>
+      <div class="tool-card">
+        <div class="tool-name">top_orgaos</div>
+        <div class="tool-desc">Órgãos com mais contratos publicados. <code>groupBy + count + sort + limit</code> no MongoDB.</div>
+        <span class="tool-param">n=5</span>
+      </div>
+      <div class="tool-card">
+        <div class="tool-name">contratos_favoraveis_mei</div>
+        <div class="tool-desc">Contratos com <code>valorInicial ≤ R$ 80.000</code>. Preferência MEI por LC 123/2006 Art. 48.</div>
+        <span class="tool-param">limite=10</span>
+      </div>
+    </div>
+
+    <div class="row mt16">
+      <div class="card blue-border" style="flex: 1">
+        <h3>HTTP REST</h3>
+        <p><code>GET /mcp/ferramentas</code> — lista as 4 tools com input_schema<br>
+        <code>POST /mcp/invocar</code> — executa por nome</p>
+      </div>
+      <div class="card purple-border" style="flex: 1">
+        <h3>MCP Nativo</h3>
+        <p><code>mcp_server/server.py</code> — compatível com Claude Desktop e IDEs. Mesmo código, transport diferente.</p>
+      </div>
+      <div class="card green-border" style="flex: 1">
+        <h3>Fonte de dados</h3>
+        <p>Todas as 4 tools consultam o <strong>MongoDB diretamente</strong> (coleção <code>contratos</code>, Bronze). Dados atuais a cada chamada.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 9 — CHATBOT ═════════════════════════════════════════════════ -->
+  <div class="slide">
+    <span class="tag tag-purple">Chatbot Léo</span>
+    <h2>Tool Calling com Claude claude-sonnet-4-6</h2>
+
+    <div class="row mt24">
+      <div class="col" style="flex: 1">
+        <div class="code" style="font-size: 12px">
+<span class="c-gray"># Loop de tool calling</span>
+<span class="c-purple">while</span> True:
+  resposta = claude.messages.create(
+    model=<span class="c-green">"claude-sonnet-4-6"</span>,
+    system=SYSTEM_PROMPT,  <span class="c-gray"># persona Léo</span>
+    tools=TOOLS,           <span class="c-gray"># 4 ferramentas</span>
+    messages=msgs
+  )
+
+  <span class="c-purple">if</span> resposta.stop_reason == <span class="c-green">"end_turn"</span>:
+    <span class="c-purple">return</span> resposta.content[<span class="c-yellow">0</span>].text
+
+  <span class="c-purple">if</span> resposta.stop_reason == <span class="c-green">"tool_use"</span>:
+    <span class="c-gray"># Claude decidiu usar uma ferramenta</span>
+    resultado = _executar_tool(
+      bloco.name, bloco.input, db
+    )
+    <span class="c-gray"># Resultado volta para o Claude</span>
+    msgs.append(tool_result(resultado))
+    <span class="c-purple">continue</span>  <span class="c-gray"># próxima iteração</span>
+        </div>
+      </div>
+
+      <div class="col" style="flex: 1; gap: 12px">
+        <div class="card" style="background: #1E3A8A; border: none">
+          <p style="font-size: 12px; color: rgba(255,255,255,.6); margin-bottom: 4px">Usuário pergunta</p>
+          <p style="font-size: 14px; color: white">"Tem algum edital de limpeza para MEI?"</p>
+        </div>
+        <div style="text-align: center; font-size: 18px; color: var(--textSec)">↓ Claude decide usar <code>buscar_contratos</code></div>
+        <div class="card blue-border">
+          <p style="font-size: 12px; color: var(--textSec); margin-bottom: 4px">MongoDB</p>
+          <p style="font-size: 13px"><code>find({objetoContrato: /limpeza/i}).limit(10)</code></p>
+        </div>
+        <div style="text-align: center; font-size: 18px; color: var(--textSec)">↓ resultado → Claude formula resposta</div>
+        <div class="card" style="background: #F0FDF4; border-color: var(--green)">
+          <p style="font-size: 12px; color: var(--green); margin-bottom: 4px">Léo responde</p>
+          <p style="font-size: 13px; color: var(--text)">Encontrei 3 contratos de limpeza favoráveis ao MEI: <strong>Prefeitura de Taió</strong> — R$ 4.800,00 · <strong>FMAS Jaraguá</strong> — R$ 1.200,00…</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 10 — ERROS ══════════════════════════════════════════════════ -->
+  <div class="slide">
+    <span class="tag tag-green">Resiliência</span>
+    <h2>Erros Mapeados — Pipeline não para</h2>
+    <p>Cada camada tem isolamento de erro. Uma falha em um módulo não derruba a API inteira.</p>
+
+    <div class="card mt24">
+      <table>
+        <tr>
+          <th>Ponto de falha</th>
+          <th>Tratamento</th>
+          <th>Impacto</th>
+        </tr>
+        <tr>
+          <td>API PNCP timeout</td>
+          <td>Retry exponencial 3× (tenacity, backoff 2–10s) → retorna parcial</td>
+          <td><span class="badge badge-gold">ETL parcial</span></td>
+        </tr>
+        <tr>
+          <td>MongoDB offline (ETL)</td>
+          <td><code>ConnectionFailure</code> capturada, pipeline encerrado com ERROR</td>
+          <td><span class="badge badge-gold">ETL falha; API ok</span></td>
+        </tr>
+        <tr>
+          <td>MongoDB offline (API)</td>
+          <td>Motor retorna erro; FastAPI retorna 500 com mensagem humanizada</td>
+          <td><span class="badge badge-gold">Endpoint falha; demais ok</span></td>
+        </tr>
+        <tr>
+          <td>PySpark sem dados no Bronze</td>
+          <td><code>if pdf.empty: spark.stop(); return</code> — sem write</td>
+          <td><span class="badge badge-gray">Gold não atualizado</span></td>
+        </tr>
+        <tr>
+          <td>CSVs Gold ausentes</td>
+          <td><code>{ "disponivel": false }</code> — sem erro 500</td>
+          <td><span class="badge badge-gray">Dashboard sem Spark</span></td>
+        </tr>
+        <tr>
+          <td>Tool do chatbot falha</td>
+          <td><code>Exception</code> capturada; string de erro enviada ao Claude; Claude informa usuário</td>
+          <td><span class="badge badge-gold">Resposta degradada</span></td>
+        </tr>
+        <tr>
+          <td>ANTHROPIC_API_KEY ausente</td>
+          <td>Retorna <code>ChatResponse</code> com mensagem de configuração antes de chamar a API</td>
+          <td><span class="badge badge-gold">Léo indisponível; API ok</span></td>
+        </tr>
+        <tr>
+          <td>Bulk write parcial (MongoDB)</td>
+          <td><code>BulkWriteError</code> logado com <code>exc.details</code>; próxima run re-tenta via upsert</td>
+          <td><span class="badge badge-green">Auto-recuperável</span></td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 11 — ENCERRAMENTO ═══════════════════════════════════════════ -->
+  <div class="slide hero-slide">
+    <div style="flex: 1; display: flex; flex-direction: column; justify-content: center">
+      <div class="hero-pill">✅ Stack completo implementado</div>
+      <h1>Engenharia de Dados<br>LicitaME</h1>
+      <p class="lead">Pipeline end-to-end da API pública ao chatbot com IA — batch correto para a fonte, near-realtime onde o usuário precisa.</p>
+
+      <div class="hero-stats">
+        <div>
+          <div class="hero-stat-num">5</div>
+          <div class="hero-stat-lbl">Etapas do pipeline</div>
+        </div>
+        <div>
+          <div class="hero-stat-num">3</div>
+          <div class="hero-stat-lbl">Camadas Medallion</div>
+        </div>
+        <div>
+          <div class="hero-stat-num">2</div>
+          <div class="hero-stat-lbl">Sistemas de log</div>
+        </div>
+        <div>
+          <div class="hero-stat-num">8</div>
+          <div class="hero-stat-lbl">Pontos de falha mapeados</div>
+        </div>
+      </div>
+
+      <div style="margin-top: 48px; display: flex; gap: 20px; flex-wrap: wrap">
+        <div style="background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2); border-radius: 10px; padding: 12px 20px; font-size: 13px; color: rgba(255,255,255,.85)">📦 MongoDB Atlas (Bronze · Silver · Gold)</div>
+        <div style="background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2); border-radius: 10px; padding: 12px 20px; font-size: 13px; color: rgba(255,255,255,.85)">⚡ PySpark local[*] — batch</div>
+        <div style="background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2); border-radius: 10px; padding: 12px 20px; font-size: 13px; color: rgba(255,255,255,.85)">🗄️ SQLite — análise relacional</div>
+        <div style="background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2); border-radius: 10px; padding: 12px 20px; font-size: 13px; color: rgba(255,255,255,.85)">🤖 Claude claude-sonnet-4-6 — tool calling</div>
+        <div style="background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2); border-radius: 10px; padding: 12px 20px; font-size: 13px; color: rgba(255,255,255,.85)">🔌 MCP Server — protocolo padrão Anthropic</div>
+        <div style="background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2); border-radius: 10px; padding: 12px 20px; font-size: 13px; color: rgba(255,255,255,.85)">🗺️ Kafka roadmap — extensão natural</div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /deck -->
+
+<!-- ══ Navigation ════════════════════════════════════════════════════════════ -->
+<div class="nav">
+  <button id="btnPrev" onclick="go(-1)" title="Anterior">&#8592;</button>
+  <div class="dots" id="dots"></div>
+  <span id="counter"></span>
+  <button id="btnNext" onclick="go(1)" title="Próximo">&#8594;</button>
+</div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const dotsEl = document.getElementById('dots');
+  const counter = document.getElementById('counter');
+  let current = 0;
+
+  // Build dots
+  slides.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === 0 ? ' active' : '');
+    d.onclick = () => goTo(i);
+    dotsEl.appendChild(d);
+  });
+
+  function goTo(n) {
+    slides[current].classList.remove('active');
+    dotsEl.children[current].classList.remove('active');
+    current = Math.max(0, Math.min(slides.length - 1, n));
+    slides[current].classList.add('active');
+    dotsEl.children[current].classList.add('active');
+    counter.textContent = (current + 1) + ' / ' + slides.length;
+    document.getElementById('btnPrev').disabled = current === 0;
+    document.getElementById('btnNext').disabled = current === slides.length - 1;
+  }
+
+  function go(dir) { goTo(current + dir); }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === ' ') go(1);
+    if (e.key === 'ArrowLeft') go(-1);
+  });
+
+  goTo(0);
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1306 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LicitaME — Apresentação do Projeto</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com" data-cfasync="false"></script>
+  <style>
+    :root {
+      --bg: #0F172A;
+      --primary: #2563EB;
+      --accent: #D97706;
+      --text: #F8FAFC;
+      --muted: #94A3B8;
+      --card: #1E293B;
+      --border: #334155;
+      --green: #10B981;
+      --orange: #F97316;
+      --purple: #8B5CF6;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    /* ─── PROGRESS BAR ─── */
+    #progress-bar {
+      position: fixed;
+      top: 0; left: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--primary), var(--accent));
+      transition: width 0.4s cubic-bezier(.4,0,.2,1);
+      z-index: 100;
+      box-shadow: 0 0 12px rgba(37,99,235,0.8);
+    }
+
+    /* ─── SLIDES ─── */
+    .slide {
+      position: absolute;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 3rem 4rem;
+      opacity: 0;
+      transform: translateY(12px);
+      pointer-events: none;
+      transition: opacity 0.5s cubic-bezier(.4,0,.2,1), transform 0.5s cubic-bezier(.4,0,.2,1);
+      overflow: hidden;
+    }
+
+    .slide.active {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: all;
+    }
+
+    /* ─── SLIDE BACKGROUNDS ─── */
+    .slide::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 70% 60% at 80% 20%, rgba(37,99,235,0.12) 0%, transparent 60%),
+                  radial-gradient(ellipse 50% 40% at 10% 80%, rgba(217,119,6,0.08) 0%, transparent 55%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .slide > * { position: relative; z-index: 1; }
+
+    /* ─── ENTRANCE ANIMATIONS ─── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    @keyframes scaleIn {
+      from { opacity: 0; transform: scale(0.92); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+    @keyframes slideRight {
+      from { opacity: 0; transform: translateX(-24px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+
+    .slide.active .anim-0 { animation: fadeUp 0.6s cubic-bezier(.4,0,.2,1) 0.05s both; }
+    .slide.active .anim-1 { animation: fadeUp 0.6s cubic-bezier(.4,0,.2,1) 0.15s both; }
+    .slide.active .anim-2 { animation: fadeUp 0.6s cubic-bezier(.4,0,.2,1) 0.25s both; }
+    .slide.active .anim-3 { animation: fadeUp 0.6s cubic-bezier(.4,0,.2,1) 0.35s both; }
+    .slide.active .anim-4 { animation: fadeUp 0.6s cubic-bezier(.4,0,.2,1) 0.45s both; }
+    .slide.active .anim-5 { animation: fadeUp 0.6s cubic-bezier(.4,0,.2,1) 0.55s both; }
+    .slide.active .anim-r0 { animation: slideRight 0.6s cubic-bezier(.4,0,.2,1) 0.05s both; }
+    .slide.active .anim-r1 { animation: slideRight 0.6s cubic-bezier(.4,0,.2,1) 0.15s both; }
+    .slide.active .anim-r2 { animation: slideRight 0.6s cubic-bezier(.4,0,.2,1) 0.25s both; }
+    .slide.active .anim-r3 { animation: slideRight 0.6s cubic-bezier(.4,0,.2,1) 0.35s both; }
+    .slide.active .anim-s0 { animation: scaleIn 0.5s cubic-bezier(.4,0,.2,1) 0.1s both; }
+    .slide.active .anim-s1 { animation: scaleIn 0.5s cubic-bezier(.4,0,.2,1) 0.2s both; }
+    .slide.active .anim-s2 { animation: scaleIn 0.5s cubic-bezier(.4,0,.2,1) 0.3s both; }
+    .slide.active .anim-s3 { animation: scaleIn 0.5s cubic-bezier(.4,0,.2,1) 0.4s both; }
+    .slide.active .anim-s4 { animation: scaleIn 0.5s cubic-bezier(.4,0,.2,1) 0.5s both; }
+    .slide.active .anim-s5 { animation: scaleIn 0.5s cubic-bezier(.4,0,.2,1) 0.6s both; }
+
+    /* ─── COMPONENTS ─── */
+    .slide-title {
+      font-size: clamp(1.6rem, 3vw, 2.4rem);
+      font-weight: 800;
+      color: var(--text);
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+    }
+
+    .slide-subtitle {
+      font-size: clamp(0.9rem, 1.6vw, 1.1rem);
+      color: var(--muted);
+      font-weight: 400;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 14px;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .badge-blue   { background: rgba(37,99,235,0.2);  color: #60A5FA; border: 1px solid rgba(37,99,235,0.4); }
+    .badge-green  { background: rgba(16,185,129,0.2); color: #34D399; border: 1px solid rgba(16,185,129,0.4); }
+    .badge-orange { background: rgba(249,115,22,0.2); color: #FB923C; border: 1px solid rgba(249,115,22,0.4); }
+    .badge-gold   { background: rgba(217,119,6,0.2);  color: #FCD34D; border: 1px solid rgba(217,119,6,0.4); }
+    .badge-purple { background: rgba(139,92,246,0.2); color: #A78BFA; border: 1px solid rgba(139,92,246,0.4); }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.25rem 1.5rem;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .card:hover { transform: translateY(-2px); border-color: var(--primary); }
+
+    .stat-card {
+      background: linear-gradient(135deg, var(--card) 0%, rgba(37,99,235,0.1) 100%);
+      border: 1px solid rgba(37,99,235,0.3);
+      border-radius: 16px;
+      padding: 1.2rem 1.5rem;
+      text-align: center;
+      flex: 1;
+    }
+
+    .stat-value {
+      font-size: clamp(1.4rem, 2.5vw, 2rem);
+      font-weight: 900;
+      background: linear-gradient(135deg, #60A5FA, #D97706);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .stat-label {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 4px;
+      font-weight: 500;
+    }
+
+    .arrow-connector {
+      display: flex;
+      align-items: center;
+      gap: 0;
+    }
+
+    .arrow-connector .node {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .arrow-connector .arrow {
+      font-size: 1.2rem;
+      color: var(--primary);
+      opacity: 0.7;
+      padding: 0 0.5rem;
+      margin-top: -14px;
+    }
+
+    .layer-box {
+      padding: 10px 18px;
+      border-radius: 12px;
+      text-align: center;
+      font-weight: 700;
+      font-size: 0.82rem;
+    }
+
+    .layer-bronze { background: rgba(146,64,14,0.35); border: 1px solid rgba(180,83,9,0.5); color: #FCD34D; }
+    .layer-silver { background: rgba(100,116,139,0.35); border: 1px solid rgba(148,163,184,0.5); color: #E2E8F0; }
+    .layer-gold   { background: rgba(161,98,7,0.35); border: 1px solid rgba(217,119,6,0.5); color: #FDE68A; }
+
+    .pipeline-step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .step-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+    }
+
+    .divider {
+      width: 100%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border), transparent);
+      margin: 0.8rem 0;
+    }
+
+    .code-block {
+      background: #0D1117;
+      border: 1px solid #30363D;
+      border-radius: 10px;
+      padding: 0.9rem 1.2rem;
+      font-family: 'Courier New', monospace;
+      font-size: 0.78rem;
+      color: #E6EDF3;
+      line-height: 1.6;
+      position: relative;
+    }
+
+    .code-block .kw  { color: #FF7B72; }
+    .code-block .fn  { color: #D2A8FF; }
+    .code-block .str { color: #A5D6FF; }
+    .code-block .cm  { color: #8B949E; }
+    .code-block .num { color: #79C0FF; }
+
+    .code-dot {
+      display: inline-block;
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      margin-right: 4px;
+    }
+
+    .workflow-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 0.9rem 1rem;
+      font-size: 0.8rem;
+      transition: border-color 0.2s;
+    }
+    .workflow-card:hover { border-color: var(--primary); }
+
+    /* ─── NAVIGATION ─── */
+    #nav-bar {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: 60px;
+      background: rgba(15,23,42,0.95);
+      backdrop-filter: blur(12px);
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2rem;
+      z-index: 100;
+    }
+
+    .nav-btn {
+      width: 40px; height: 40px;
+      border-radius: 10px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--text);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      transition: background 0.2s, border-color 0.2s, transform 0.1s;
+    }
+    .nav-btn:hover { background: var(--primary); border-color: var(--primary); transform: scale(1.05); }
+    .nav-btn:active { transform: scale(0.95); }
+
+    #slide-counter {
+      font-size: 0.82rem;
+      color: var(--muted);
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      min-width: 48px;
+      text-align: center;
+    }
+
+    #dots-container {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--border);
+      cursor: pointer;
+      transition: background 0.3s, transform 0.2s, width 0.3s;
+    }
+    .dot.active {
+      background: var(--primary);
+      width: 22px;
+      border-radius: 4px;
+      transform: scale(1.1);
+    }
+    .dot:hover { background: var(--muted); }
+
+    /* ─── SLIDE-SPECIFIC HELPERS ─── */
+    .logo-circle {
+      width: 80px; height: 80px;
+      background: linear-gradient(135deg, var(--primary), #1D4ED8);
+      border-radius: 22px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2.4rem;
+      box-shadow: 0 8px 32px rgba(37,99,235,0.4);
+    }
+
+    .tag-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 16px;
+      background: rgba(37,99,235,0.15);
+      border: 1px solid rgba(37,99,235,0.3);
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #93C5FD;
+    }
+
+    .team-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+    }
+
+    .team-pill {
+      padding: 5px 14px;
+      background: rgba(30,41,59,0.8);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .section-label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--primary);
+      margin-bottom: 6px;
+    }
+
+    .kafka-box {
+      background: rgba(139,92,246,0.12);
+      border: 1px solid rgba(139,92,246,0.35);
+      border-radius: 12px;
+      padding: 0.7rem 1rem;
+      font-size: 0.82rem;
+      color: #C4B5FD;
+      font-weight: 600;
+      text-align: center;
+    }
+
+    .feature-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .feature-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--primary);
+      margin-top: 6px;
+      flex-shrink: 0;
+    }
+
+    .security-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .security-item {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 0.9rem;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .security-icon {
+      font-size: 1.4rem;
+    }
+
+    /* Scrollbar hidden */
+    ::-webkit-scrollbar { width: 0; }
+  </style>
+</head>
+<body>
+
+<!-- Progress Bar -->
+<div id="progress-bar" style="width: 11.11%;"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!--  SLIDE 1 — CAPA / PROBLEMA                                    -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section class="slide active" id="slide-0">
+  <div style="max-width: 860px; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 1.4rem;">
+
+    <!-- Logo + título -->
+    <div class="anim-0" style="display: flex; align-items: center; gap: 1.2rem;">
+      <div class="logo-circle">⚖️</div>
+      <div>
+        <h1 style="font-size: clamp(2.8rem, 6vw, 4.5rem); font-weight: 900; letter-spacing: -0.04em; background: linear-gradient(135deg, #F8FAFC 0%, #60A5FA 60%, #D97706 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1;">LicitaME</h1>
+      </div>
+    </div>
+
+    <!-- Subtítulo -->
+    <p class="anim-1" style="font-size: clamp(0.95rem, 1.8vw, 1.2rem); color: var(--muted); text-align: center; max-width: 600px; line-height: 1.6;">
+      Plataforma de apoio à participação de <strong style="color: var(--text);">MEIs</strong> em licitações públicas — do dado bruto ao insight acionável
+    </p>
+
+    <!-- Stat cards -->
+    <div class="anim-2" style="display: flex; gap: 1rem; width: 100%; margin-top: 0.4rem;">
+      <div class="stat-card">
+        <div class="stat-value">17M</div>
+        <div class="stat-label">MEIs no Brasil</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">R$ 800B</div>
+        <div class="stat-label">Em contratos/ano</div>
+      </div>
+      <div class="stat-card" style="background: linear-gradient(135deg, var(--card) 0%, rgba(217,119,6,0.1) 100%); border-color: rgba(217,119,6,0.3);">
+        <div class="stat-value" style="background: linear-gradient(135deg, #FB923C, #DC2626); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">&lt; 2%</div>
+        <div class="stat-label">Participação MEI</div>
+      </div>
+    </div>
+
+    <!-- Tag do projeto -->
+    <div class="anim-3" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: center;">
+      <span class="tag-pill">🎓 Projeto Integrador — Engenharia de Dados</span>
+    </div>
+
+    <!-- Equipe -->
+    <div class="anim-4" style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+      <p class="section-label">Equipe</p>
+      <div class="team-grid">
+        <span class="team-pill">Luccas Fernandes</span>
+        <span class="team-pill">Gabriel Nogueira</span>
+        <span class="team-pill">Maria Eduarda Pernambuco</span>
+        <span class="team-pill">Luiz Henrique Cavalcanti</span>
+        <span class="team-pill">Nathalia Carvalho</span>
+        <span class="team-pill">Carlos Cavalcante</span>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!--  SLIDE 2 — ARQUITETURA GERAL                                  -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section class="slide" id="slide-1">
+  <div style="max-width: 920px; width: 100%; display: flex; flex-direction: column; gap: 1.5rem;">
+
+    <div class="anim-0">
+      <p class="section-label">Visão Técnica</p>
+      <h2 class="slide-title">Arquitetura Medallion</h2>
+      <p class="slide-subtitle" style="margin-top: 6px;">Arquitetura robusta, tolerante a falhas, com duas vias de processamento</p>
+    </div>
+
+    <!-- Diagrama horizontal -->
+    <div class="anim-1" style="display: flex; align-items: center; justify-content: center; gap: 0; overflow-x: auto; padding: 1.2rem 0;">
+
+      <!-- PNCP API -->
+      <div class="pipeline-step">
+        <div class="step-icon" style="background: rgba(37,99,235,0.2); border: 1px solid rgba(37,99,235,0.4);">🌐</div>
+        <span style="font-size: 0.72rem; font-weight: 700; color: #60A5FA;">PNCP API</span>
+      </div>
+      <div style="font-size: 1.5rem; color: var(--primary); opacity: 0.6; padding: 0 6px; margin-top: -14px;">→</div>
+
+      <!-- ETL -->
+      <div class="pipeline-step">
+        <div class="step-icon" style="background: rgba(139,92,246,0.2); border: 1px solid rgba(139,92,246,0.4);">⚙️</div>
+        <span style="font-size: 0.72rem; font-weight: 700; color: #A78BFA;">ETL</span>
+      </div>
+      <div style="font-size: 1.5rem; color: var(--primary); opacity: 0.6; padding: 0 6px; margin-top: -14px;">→</div>
+
+      <!-- Bronze -->
+      <div class="pipeline-step">
+        <div class="layer-box layer-bronze" style="padding: 12px 20px; font-size: 0.85rem;">🟫<br>Bronze</div>
+      </div>
+      <div style="font-size: 1.5rem; color: var(--primary); opacity: 0.6; padding: 0 6px; margin-top: -14px;">→</div>
+
+      <!-- Kafka/Spark -->
+      <div class="pipeline-step">
+        <div class="step-icon" style="background: rgba(217,119,6,0.2); border: 1px solid rgba(217,119,6,0.4);">🔄</div>
+        <span style="font-size: 0.72rem; font-weight: 700; color: #FCD34D;">Kafka / Spark</span>
+      </div>
+      <div style="font-size: 1.5rem; color: var(--primary); opacity: 0.6; padding: 0 6px; margin-top: -14px;">→</div>
+
+      <!-- Silver -->
+      <div class="pipeline-step">
+        <div class="layer-box layer-silver" style="padding: 12px 20px; font-size: 0.85rem;">⚪<br>Silver</div>
+      </div>
+      <div style="font-size: 1.5rem; color: var(--primary); opacity: 0.6; padding: 0 6px; margin-top: -14px;">→</div>
+
+      <!-- Transformação -->
+      <div class="pipeline-step">
+        <div class="step-icon" style="background: rgba(16,185,129,0.2); border: 1px solid rgba(16,185,129,0.4);">🔧</div>
+        <span style="font-size: 0.72rem; font-weight: 700; color: #34D399;">Transformação</span>
+      </div>
+      <div style="font-size: 1.5rem; color: var(--primary); opacity: 0.6; padding: 0 6px; margin-top: -14px;">→</div>
+
+      <!-- Gold -->
+      <div class="pipeline-step">
+        <div class="layer-box layer-gold" style="padding: 12px 20px; font-size: 0.85rem;">🟡<br>Gold</div>
+      </div>
+
+    </div>
+
+    <!-- Cards de tecnologias -->
+    <div class="anim-2" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
+      <div class="card" style="text-align: center;">
+        <div style="font-size: 1.6rem; margin-bottom: 6px;">⚡</div>
+        <p style="font-size: 0.8rem; font-weight: 700; color: var(--text);">Streaming</p>
+        <p style="font-size: 0.72rem; color: var(--muted); margin-top: 3px;">Apache Kafka</p>
+      </div>
+      <div class="card" style="text-align: center;">
+        <div style="font-size: 1.6rem; margin-bottom: 6px;">🔥</div>
+        <p style="font-size: 0.8rem; font-weight: 700; color: var(--text);">Batch</p>
+        <p style="font-size: 0.72rem; color: var(--muted); margin-top: 3px;">PySpark</p>
+      </div>
+      <div class="card" style="text-align: center;">
+        <div style="font-size: 1.6rem; margin-bottom: 6px;">🤖</div>
+        <p style="font-size: 0.8rem; font-weight: 700; color: var(--text);">Orquestração</p>
+        <p style="font-size: 0.72rem; color: var(--muted); margin-top: 3px;">GitHub Actions</p>
+      </div>
+      <div class="card" style="text-align: center;">
+        <div style="font-size: 1.6rem; margin-bottom: 6px;">🗄️</div>
+        <p style="font-size: 0.8rem; font-weight: 700; color: var(--text);">Storage</p>
+        <p style="font-size: 0.72rem; color: var(--muted); margin-top: 3px;">MongoDB Atlas</p>
+      </div>
+    </div>
+
+    <div class="anim-3" style="display: flex; gap: 8px; flex-wrap: wrap;">
+      <span class="badge badge-blue">Fault Tolerant</span>
+      <span class="badge badge-green">Dual Pipeline</span>
+      <span class="badge badge-gold">Medallion Pattern</span>
+      <span class="badge badge-purple">Cloud Native</span>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!--  SLIDE 3 — PIPELINE ETL                                       -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section class="slide" id="slide-2">
+  <div style="max-width: 900px; width: 100%; display: flex; flex-direction: column; gap: 1.4rem;">
+
+    <div class="anim-0">
+      <p class="section-label">Dados</p>
+      <h2 class="slide-title">Pipeline ETL — PNCP</h2>
+      <p class="slide-subtitle" style="margin-top: 6px;">Coleta diária automática do Portal Nacional de Contratações Públicas</p>
+    </div>
+
+    <!-- 3 colunas -->
+    <div class="anim-1" style="display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; gap: 0; align-items: start;">
+
+      <!-- Extração -->
+      <div class="card" style="border-color: rgba(37,99,235,0.4);">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+          <div style="width: 36px; height: 36px; background: rgba(37,99,235,0.2); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1rem;">📥</div>
+          <p style="font-weight: 700; color: #60A5FA;">Extração</p>
+        </div>
+        <div class="feature-row" style="margin-bottom: 6px;">
+          <div class="feature-dot"></div>
+          <span style="font-size: 0.78rem; color: var(--muted);">PNCPExtractor</span>
+        </div>
+        <div class="feature-row" style="margin-bottom: 6px;">
+          <div class="feature-dot"></div>
+          <span style="font-size: 0.78rem; color: var(--muted);">API pública REST</span>
+        </div>
+        <div class="feature-row">
+          <div class="feature-dot"></div>
+          <span style="font-size: 0.78rem; color: var(--muted);">Paginação automática</span>
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: center; padding: 0 12px; margin-top: 40px;">
+        <span style="font-size: 1.8rem; color: var(--primary); opacity: 0.5;">→</span>
+      </div>
+
+      <!-- Transformação -->
+      <div class="card" style="border-color: rgba(139,92,246,0.4);">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+          <div style="width: 36px; height: 36px; background: rgba(139,92,246,0.2); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1rem;">⚙️</div>
+          <p style="font-weight: 700; color: #A78BFA;">Transformação</p>
+        </div>
+        <div class="feature-row" style="margin-bottom: 6px;">
+          <div class="feature-dot" style="background: #8B5CF6;"></div>
+          <span style="font-size: 0.78rem; color: var(--muted);">PNCPTransformer</span>
+        </div>
+        <div class="feature-row" style="margin-bottom: 6px;">
+          <div class="feature-dot" style="background: #8B5CF6;"></div>
+          <span style="font-size: 0.78rem; color: var(--muted);">Normalização de campos</span>
+        </div>
+        <div class="feature-row">
+          <div class="feature-dot" style="background: #8B5CF6;"></div>
+          <span style="font-size: 0.78rem; color: var(--muted);">Enriquecimento MEI</span>
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: center; padding: 0 12px; margin-top: 40px;">
+        <span style="font-size: 1.8rem; color: var(--primary); opacity: 0.5;">→</span>
+      </div>
+
+      <!-- Carga -->
+      <div class="card" style="border-color: rgba(16,185,129,0.4);">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+          <div style="width: 36px; height: 36px; background: rgba(16,185,129,0.2); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1rem;">📤</div>
+          <p style="font-weight: 700; color: #34D399;">Carga</p>
+        </div>
+        <div class="feature-row" style="margin-bottom: 6px;">
+          <div class="feature-dot" style="background: #10B981;"></div>
+          <span style="font-size: 0.78rem; color: var(--muted);">MongoDB Atlas</span>
+        </div>
+        <div class="feature-row" style="margin-bottom: 6px;">
+          <div class="feature-dot" style="background: #10B981;"></div>
+          <span style="font-size: 0.78rem; color: var(--muted);">SQLite local</span>
+        </div>
+        <div class="feature-row">
+          <div class="feature-dot" style="background: #10B981;"></div>
+          <span style="font-size: 0.78rem; color: var(--muted);">Upsert incremental</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Code snippet -->
+    <div class="anim-2">
+      <div class="code-block">
+        <div style="display: flex; gap: 6px; margin-bottom: 10px; align-items: center;">
+          <span class="code-dot" style="background: #FF5F56;"></span>
+          <span class="code-dot" style="background: #FFBD2E;"></span>
+          <span class="code-dot" style="background: #27C93F;"></span>
+          <span style="margin-left: 8px; font-size: 0.7rem; color: #8B949E;">etl/pipeline.py</span>
+        </div>
+        <span class="kw">async def</span> <span class="fn">run</span>():
+    pipeline = <span class="fn">ETLPipeline</span>()
+    <span class="cm"># Extrair → Transformar → Carregar → Publicar Kafka</span>
+    result = <span class="kw">await</span> pipeline.<span class="fn">run</span>(limit=<span class="num">10_000</span>)
+    logger.<span class="fn">info</span>(<span class="str">f"ETL concluído: {result['total']} contratos"</span>)
+      </div>
+    </div>
+
+    <!-- Badges -->
+    <div class="anim-3" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+      <span class="badge badge-orange">⏰ Diário às 03:00 UTC via GitHub Actions</span>
+      <span class="badge badge-blue">10.000 registros/execução</span>
+      <span class="badge badge-green">Upsert — sem duplicatas</span>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!--  SLIDE 4 — KAFKA STREAMING                                    -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section class="slide" id="slide-3">
+  <div style="max-width: 900px; width: 100%; display: flex; flex-direction: column; gap: 1.4rem;">
+
+    <div class="anim-0" style="display: flex; align-items: center; gap: 14px;">
+      <div>
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+          <p class="section-label" style="margin-bottom: 0;">Streaming</p>
+          <span class="badge badge-green">● STREAMING</span>
+        </div>
+        <h2 class="slide-title">Streaming com Apache Kafka</h2>
+      </div>
+    </div>
+
+    <!-- Diagrama de fluxo -->
+    <div class="anim-1" style="display: flex; align-items: center; justify-content: center; gap: 6px; background: rgba(30,41,59,0.6); border: 1px solid var(--border); border-radius: 14px; padding: 1.2rem;">
+      <div class="pipeline-step">
+        <div class="step-icon" style="background: rgba(139,92,246,0.2); border: 1px solid rgba(139,92,246,0.4);">⚙️</div>
+        <span style="font-size: 0.72rem; font-weight: 700; color: #A78BFA;">ETL</span>
+      </div>
+      <span style="font-size: 1.5rem; color: var(--primary); opacity: 0.5; margin-top: -14px;">→</span>
+      <div class="pipeline-step">
+        <div class="step-icon" style="background: rgba(249,115,22,0.2); border: 1px solid rgba(249,115,22,0.4);">📤</div>
+        <span style="font-size: 0.72rem; font-weight: 700; color: #FB923C;">Producer</span>
+      </div>
+      <span style="font-size: 1.5rem; color: var(--primary); opacity: 0.5; margin-top: -14px;">→</span>
+      <div class="pipeline-step">
+        <div class="kafka-box" style="padding: 10px 16px;">📨<br><span style="font-size: 0.65rem;">pncp.contratos.novos</span></div>
+      </div>
+      <span style="font-size: 1.5rem; color: var(--primary); opacity: 0.5; margin-top: -14px;">→</span>
+      <div class="pipeline-step">
+        <div class="step-icon" style="background: rgba(16,185,129,0.2); border: 1px solid rgba(16,185,129,0.4);">📥</div>
+        <span style="font-size: 0.72rem; font-weight: 700; color: #34D399;">Consumer</span>
+      </div>
+      <span style="font-size: 1.5rem; color: var(--primary); opacity: 0.5; margin-top: -14px;">→</span>
+      <div class="pipeline-step" style="gap: 4px;">
+        <div class="layer-box layer-bronze" style="padding: 5px 12px; font-size: 0.7rem;">🟫 Bronze</div>
+        <div style="font-size: 0.7rem; color: var(--muted);">↓</div>
+        <div class="layer-box layer-silver" style="padding: 5px 12px; font-size: 0.7rem;">⚪ Silver</div>
+        <div style="font-size: 0.7rem; color: var(--muted);">↓</div>
+        <div class="layer-box layer-gold" style="padding: 5px 12px; font-size: 0.7rem;">🟡 Gold + Alertas</div>
+      </div>
+    </div>
+
+    <!-- 2 colunas: Producer vs Consumer -->
+    <div class="anim-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+      <div class="card" style="border-color: rgba(249,115,22,0.4);">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+          <span style="font-size: 1.2rem;">📤</span>
+          <p style="font-weight: 700; color: #FB923C;">Producer</p>
+        </div>
+        <div class="feature-row" style="margin-bottom: 5px;"><div class="feature-dot" style="background: #F97316;"></div><span style="font-size: 0.78rem; color: var(--muted);">Publica após cada execução ETL</span></div>
+        <div class="feature-row" style="margin-bottom: 5px;"><div class="feature-dot" style="background: #F97316;"></div><span style="font-size: 0.78rem; color: var(--muted);">Autenticação SASL/SSL</span></div>
+        <div class="feature-row"><div class="feature-dot" style="background: #F97316;"></div><span style="font-size: 0.78rem; color: var(--muted);">Retry com backoff exponencial</span></div>
+      </div>
+      <div class="card" style="border-color: rgba(16,185,129,0.4);">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+          <span style="font-size: 1.2rem;">📥</span>
+          <p style="font-weight: 700; color: #34D399;">Consumer</p>
+        </div>
+        <div class="feature-row" style="margin-bottom: 5px;"><div class="feature-dot" style="background: #10B981;"></div><span style="font-size: 0.78rem; color: var(--muted);">asyncio integrado à API</span></div>
+        <div class="feature-row" style="margin-bottom: 5px;"><div class="feature-dot" style="background: #10B981;"></div><span style="font-size: 0.78rem; color: var(--muted);">Upsert incremental no MongoDB</span></div>
+        <div class="feature-row"><div class="feature-dot" style="background: #10B981;"></div><span style="font-size: 0.78rem; color: var(--muted);">Dispara alertas em tempo real</span></div>
+      </div>
+    </div>
+
+    <!-- Destaque graceful degradation -->
+    <div class="anim-3" style="background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.3); border-radius: 12px; padding: 0.8rem 1.2rem; display: flex; align-items: center; gap: 10px;">
+      <span style="font-size: 1.3rem;">🛡️</span>
+      <div>
+        <p style="font-size: 0.82rem; font-weight: 700; color: #34D399;">Graceful Degradation</p>
+        <p style="font-size: 0.75rem; color: var(--muted); margin-top: 2px;">API funciona plenamente sem Kafka configurado — modo fallback automático</p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!--  SLIDE 5 — SPARK BATCH                                        -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section class="slide" id="slide-4">
+  <div style="max-width: 880px; width: 100%; display: flex; flex-direction: column; gap: 1.4rem;">
+
+    <div class="anim-0" style="display: flex; align-items: center; gap: 12px;">
+      <div>
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+          <p class="section-label" style="margin-bottom: 0;">Processamento</p>
+          <span class="badge badge-orange">● BATCH</span>
+        </div>
+        <h2 class="slide-title">PySpark Batch — Recálculo Gold</h2>
+      </div>
+    </div>
+
+    <!-- Pipeline visual -->
+    <div class="anim-1" style="background: rgba(30,41,59,0.6); border: 1px solid var(--border); border-radius: 14px; padding: 1.2rem 1.5rem;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+
+        <!-- MongoDB Bronze -->
+        <div class="pipeline-step" style="min-width: 90px;">
+          <div class="step-icon" style="background: rgba(146,64,14,0.3); border: 1px solid rgba(180,83,9,0.5);">🗄️</div>
+          <span style="font-size: 0.7rem; font-weight: 700; color: #FCD34D; text-align: center;">MongoDB<br>Bronze</span>
+        </div>
+        <span style="font-size: 1.5rem; color: var(--primary); opacity: 0.5; margin-top: -14px; flex-shrink: 0;">→</span>
+
+        <!-- Spark DataFrame -->
+        <div class="pipeline-step" style="min-width: 90px;">
+          <div class="step-icon" style="background: rgba(249,115,22,0.2); border: 1px solid rgba(249,115,22,0.4);">🔥</div>
+          <span style="font-size: 0.7rem; font-weight: 700; color: #FB923C; text-align: center;">Spark<br>DataFrame</span>
+        </div>
+        <span style="font-size: 1.5rem; color: var(--primary); opacity: 0.5; margin-top: -14px; flex-shrink: 0;">→</span>
+
+        <!-- 4 outputs -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; flex: 1;">
+          <div class="card" style="padding: 0.7rem; border-color: rgba(37,99,235,0.3);">
+            <p style="font-size: 0.72rem; font-weight: 700; color: #60A5FA;">📋 Schema</p>
+            <p style="font-size: 0.65rem; color: var(--muted); margin-top: 3px;">Validação estrutural</p>
+          </div>
+          <div class="card" style="padding: 0.7rem; border-color: rgba(16,185,129,0.3);">
+            <p style="font-size: 0.72rem; font-weight: 700; color: #34D399;">📊 Stats</p>
+            <p style="font-size: 0.65rem; color: var(--muted); margin-top: 3px;">Estatísticas agregadas</p>
+          </div>
+          <div class="card" style="padding: 0.7rem; border-color: rgba(217,119,6,0.3);">
+            <p style="font-size: 0.72rem; font-weight: 700; color: #FCD34D;">🏆 Top 10 Órgãos</p>
+            <p style="font-size: 0.65rem; color: var(--muted); margin-top: 3px;">Por volume de contratos</p>
+          </div>
+          <div class="card" style="padding: 0.7rem; border-color: rgba(139,92,246,0.3);">
+            <p style="font-size: 0.72rem; font-weight: 700; color: #A78BFA;">🎯 Contratos MEI</p>
+            <p style="font-size: 0.65rem; color: var(--muted); margin-top: 3px;">Filtrados por perfil</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Métricas -->
+    <div class="anim-2" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+      <div class="stat-card" style="padding: 0.9rem;">
+        <div class="stat-value" style="font-size: 1.5rem;">4</div>
+        <div class="stat-label">Transformações</div>
+      </div>
+      <div class="stat-card" style="padding: 0.9rem; background: linear-gradient(135deg, var(--card) 0%, rgba(16,185,129,0.1) 100%); border-color: rgba(16,185,129,0.3);">
+        <div class="stat-value" style="font-size: 1.5rem; background: linear-gradient(135deg, #34D399, #10B981); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">CSV + DB</div>
+        <div class="stat-label">Outputs</div>
+      </div>
+      <div class="stat-card" style="padding: 0.9rem; background: linear-gradient(135deg, var(--card) 0%, rgba(217,119,6,0.1) 100%); border-color: rgba(217,119,6,0.3);">
+        <div class="stat-value" style="font-size: 1.5rem; background: linear-gradient(135deg, #FCD34D, #D97706); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">30 dias</div>
+        <div class="stat-label">Histórico</div>
+      </div>
+    </div>
+
+    <div class="anim-3" style="display: flex; gap: 8px; flex-wrap: wrap;">
+      <span class="badge badge-orange">⏰ Agendado às 04:00 UTC — 1h após o ETL</span>
+      <span class="badge badge-blue">spark/pyspark_transform.py</span>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!--  SLIDE 6 — API + DEPLOY                                       -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section class="slide" id="slide-5">
+  <div style="max-width: 940px; width: 100%; display: flex; flex-direction: column; gap: 1.4rem;">
+
+    <div class="anim-0" style="display: flex; align-items: center; justify-content: space-between;">
+      <div>
+        <p class="section-label">Infraestrutura</p>
+        <h2 class="slide-title">API REST + CI/CD Automático</h2>
+        <p class="slide-subtitle" style="margin-top: 6px;">FastAPI + MongoDB Atlas + SquareCloud</p>
+      </div>
+      <span class="badge badge-blue" style="font-size: 0.75rem; padding: 6px 16px;">🚀 AUTO-DEPLOY</span>
+    </div>
+
+    <!-- Stack icons -->
+    <div class="anim-1" style="display: flex; gap: 10px; flex-wrap: wrap;">
+      <div class="card" style="display: flex; align-items: center; gap: 8px; padding: 0.7rem 1rem;">
+        <span style="font-size: 1.1rem;">⚡</span>
+        <span style="font-size: 0.8rem; font-weight: 600;">FastAPI</span>
+      </div>
+      <div class="card" style="display: flex; align-items: center; gap: 8px; padding: 0.7rem 1rem;">
+        <span style="font-size: 1.1rem;">🗄️</span>
+        <span style="font-size: 0.8rem; font-weight: 600;">MongoDB Atlas</span>
+      </div>
+      <div class="card" style="display: flex; align-items: center; gap: 8px; padding: 0.7rem 1rem;">
+        <span style="font-size: 1.1rem;">☁️</span>
+        <span style="font-size: 0.8rem; font-weight: 600;">SquareCloud</span>
+      </div>
+      <div class="card" style="display: flex; align-items: center; gap: 8px; padding: 0.7rem 1rem;">
+        <span style="font-size: 1.1rem;">🤖</span>
+        <span style="font-size: 0.8rem; font-weight: 600;">GitHub Actions</span>
+      </div>
+      <div class="card" style="display: flex; align-items: center; gap: 8px; padding: 0.7rem 1rem;">
+        <span style="font-size: 1.1rem;">📱</span>
+        <span style="font-size: 0.8rem; font-weight: 600;">Expo EAS</span>
+      </div>
+    </div>
+
+    <!-- 6 workflows -->
+    <div class="anim-2" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+
+      <div class="workflow-card" style="border-color: rgba(37,99,235,0.4);">
+        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+          <span style="font-size: 0.9rem;">🧪</span>
+          <span style="font-size: 0.8rem; font-weight: 700; color: #60A5FA;">CI</span>
+          <span class="badge badge-blue" style="font-size: 0.6rem; padding: 2px 8px; margin-left: auto;">push main/dev</span>
+        </div>
+        <p style="font-size: 0.72rem; color: var(--muted);">Testes automatizados + CVE audit</p>
+      </div>
+
+      <div class="workflow-card" style="border-color: rgba(16,185,129,0.4);">
+        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+          <span style="font-size: 0.9rem;">🚀</span>
+          <span style="font-size: 0.8rem; font-weight: 700; color: #34D399;">Deploy</span>
+          <span class="badge badge-green" style="font-size: 0.6rem; padding: 2px 8px; margin-left: auto;">push main</span>
+        </div>
+        <p style="font-size: 0.72rem; color: var(--muted);">SquareCloud automático</p>
+      </div>
+
+      <div class="workflow-card" style="border-color: rgba(139,92,246,0.4);">
+        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+          <span style="font-size: 0.9rem;">⚙️</span>
+          <span style="font-size: 0.8rem; font-weight: 700; color: #A78BFA;">ETL</span>
+          <span class="badge badge-purple" style="font-size: 0.6rem; padding: 2px 8px; margin-left: auto;">03h UTC</span>
+        </div>
+        <p style="font-size: 0.72rem; color: var(--muted);">Pipeline de dados diária</p>
+      </div>
+
+      <div class="workflow-card" style="border-color: rgba(249,115,22,0.4);">
+        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+          <span style="font-size: 0.9rem;">🔥</span>
+          <span style="font-size: 0.8rem; font-weight: 700; color: #FB923C;">Spark</span>
+          <span class="badge badge-orange" style="font-size: 0.6rem; padding: 2px 8px; margin-left: auto;">04h UTC</span>
+        </div>
+        <p style="font-size: 0.72rem; color: var(--muted);">Recálculo batch Gold</p>
+      </div>
+
+      <div class="workflow-card" style="border-color: rgba(217,119,6,0.4);">
+        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+          <span style="font-size: 0.9rem;">📱</span>
+          <span style="font-size: 0.8rem; font-weight: 700; color: #FCD34D;">EAS Build</span>
+          <span class="badge badge-gold" style="font-size: 0.6rem; padding: 2px 8px; margin-left: auto;">push mobile</span>
+        </div>
+        <p style="font-size: 0.72rem; color: var(--muted);">APK Android automático</p>
+      </div>
+
+      <div class="workflow-card" style="border-color: rgba(100,116,139,0.4);">
+        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+          <span style="font-size: 0.9rem;">💾</span>
+          <span style="font-size: 0.8rem; font-weight: 700; color: #94A3B8;">Backup</span>
+          <span class="badge" style="background: rgba(100,116,139,0.2); color: #CBD5E1; border: 1px solid rgba(100,116,139,0.4); font-size: 0.6rem; padding: 2px 8px; margin-left: auto;">dom 02h</span>
+        </div>
+        <p style="font-size: 0.72rem; color: var(--muted);">MongoDB backup semanal</p>
+      </div>
+
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!--  SLIDE 7 — DASHBOARDS + MONITOR                               -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section class="slide" id="slide-6">
+  <div style="max-width: 920px; width: 100%; display: flex; flex-direction: column; gap: 1.4rem;">
+
+    <div class="anim-0">
+      <p class="section-label">Interface</p>
+      <h2 class="slide-title">Dashboards e Monitoramento</h2>
+      <p class="slide-subtitle" style="margin-top: 6px;">Acessíveis via browser, deploy automático com a API</p>
+    </div>
+
+    <!-- 3 cards -->
+    <div class="anim-1" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;">
+
+      <!-- Dashboard Analytics -->
+      <div class="card" style="border-color: rgba(37,99,235,0.4); display: flex; flex-direction: column; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div style="width: 36px; height: 36px; background: rgba(37,99,235,0.2); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1rem;">📊</div>
+          <div>
+            <p style="font-size: 0.8rem; font-weight: 700; color: #60A5FA;">Dashboard Analytics</p>
+            <p style="font-size: 0.65rem; color: var(--muted);"><code style="background: rgba(37,99,235,0.2); padding: 1px 5px; border-radius: 4px;">/dashboard</code></p>
+          </div>
+        </div>
+        <!-- ASCII mockup -->
+        <div style="background: #0D1117; border-radius: 8px; padding: 0.6rem; font-family: monospace; font-size: 0.6rem; color: #8B949E; line-height: 1.7; border: 1px solid #30363D;">
+          <span style="color: #34D399;">■</span> KPIs Totais<br>
+          <span style="color: #60A5FA;">▓▓▓▓▓░░</span> Contratos/dia<br>
+          <span style="color: #FCD34D;">■</span> Top Órgãos<br>
+          <span style="color: #A78BFA;">⬟</span> PySpark Stats
+        </div>
+        <div class="feature-row"><div class="feature-dot"></div><span style="font-size: 0.72rem; color: var(--muted);">KPIs em tempo real</span></div>
+        <div class="feature-row"><div class="feature-dot"></div><span style="font-size: 0.72rem; color: var(--muted);">Gráficos interativos</span></div>
+      </div>
+
+      <!-- Monitor da Pipeline -->
+      <div class="card" style="border-color: rgba(217,119,6,0.4); display: flex; flex-direction: column; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div style="width: 36px; height: 36px; background: rgba(217,119,6,0.2); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1rem;">🔭</div>
+          <div>
+            <p style="font-size: 0.8rem; font-weight: 700; color: #FCD34D;">Monitor da Pipeline</p>
+            <p style="font-size: 0.65rem; color: var(--muted);"><code style="background: rgba(217,119,6,0.2); padding: 1px 5px; border-radius: 4px;">/monitor</code></p>
+          </div>
+        </div>
+        <!-- ASCII mockup -->
+        <div style="background: #0D1117; border-radius: 8px; padding: 0.6rem; font-family: monospace; font-size: 0.6rem; color: #8B949E; line-height: 1.7; border: 1px solid #30363D;">
+          <span style="color: #FCD34D;">🟫</span> Bronze <span style="color: #34D399;">OK</span><br>
+          <span style="color: #E2E8F0;">⚪</span> Silver <span style="color: #34D399;">OK</span><br>
+          <span style="color: #FDE68A;">🟡</span> Gold  <span style="color: #34D399;">OK</span><br>
+          <span style="color: #A78BFA;">⚡</span> Kafka  <span style="color: #FB923C;">WARN</span>
+        </div>
+        <div class="feature-row"><div class="feature-dot" style="background: #D97706;"></div><span style="font-size: 0.72rem; color: var(--muted);">Status Medallion</span></div>
+        <div class="feature-row"><div class="feature-dot" style="background: #D97706;"></div><span style="font-size: 0.72rem; color: var(--muted);">ETL / Spark / Kafka</span></div>
+      </div>
+
+      <!-- Chatbot Léo -->
+      <div class="card" style="border-color: rgba(139,92,246,0.4); display: flex; flex-direction: column; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div style="width: 36px; height: 36px; background: rgba(139,92,246,0.2); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1rem;">🤖</div>
+          <div>
+            <p style="font-size: 0.8rem; font-weight: 700; color: #A78BFA;">Chatbot Léo</p>
+            <p style="font-size: 0.65rem; color: var(--muted);"><code style="background: rgba(139,92,246,0.2); padding: 1px 5px; border-radius: 4px;">/app</code></p>
+          </div>
+        </div>
+        <!-- ASCII mockup -->
+        <div style="background: #0D1117; border-radius: 8px; padding: 0.6rem; font-family: monospace; font-size: 0.6rem; color: #8B949E; line-height: 1.7; border: 1px solid #30363D;">
+          <span style="color: #A78BFA;">Léo</span>: Olá! Como posso ajudar?<br>
+          <span style="color: #60A5FA;">User</span>: editais de TI<br>
+          <span style="color: #A78BFA;">Léo</span>: <span style="color: #34D399;">[buscar_contratos]</span>...<br>
+          <span style="color: #A78BFA;">Léo</span>: Encontrei 42 editais
+        </div>
+        <div class="feature-row"><div class="feature-dot" style="background: #8B5CF6;"></div><span style="font-size: 0.72rem; color: var(--muted);">Claude + tool calling</span></div>
+        <div class="feature-row"><div class="feature-dot" style="background: #8B5CF6;"></div><span style="font-size: 0.72rem; color: var(--muted);">MCP server integrado</span></div>
+      </div>
+
+    </div>
+
+    <div class="anim-2" style="display: flex; gap: 8px; flex-wrap: wrap;">
+      <span class="badge badge-blue">Streamlit</span>
+      <span class="badge badge-green">Sem configuração extra</span>
+      <span class="badge badge-purple">Claude API + MCP</span>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!--  SLIDE 8 — SEGURANÇA                                          -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section class="slide" id="slide-7">
+  <div style="max-width: 900px; width: 100%; display: flex; flex-direction: column; gap: 1.4rem;">
+
+    <div class="anim-0" style="display: flex; align-items: center; justify-content: space-between;">
+      <div>
+        <p class="section-label">Compliance</p>
+        <h2 class="slide-title">Segurança e LGPD</h2>
+        <p class="slide-subtitle" style="margin-top: 6px;">Controles de segurança em múltiplas camadas</p>
+      </div>
+      <span class="badge badge-green" style="font-size: 0.72rem; padding: 6px 14px; white-space: nowrap;">✅ OWASP Top 10 mitigado</span>
+    </div>
+
+    <!-- Security grid -->
+    <div class="anim-1 security-grid">
+
+      <div class="security-item" style="border-color: rgba(37,99,235,0.4);">
+        <span class="security-icon">🔐</span>
+        <p style="font-size: 0.82rem; font-weight: 700; color: #60A5FA;">JWT HS256</p>
+        <p style="font-size: 0.72rem; color: var(--muted);">Tokens com expiração + refresh</p>
+      </div>
+
+      <div class="security-item" style="border-color: rgba(16,185,129,0.4);">
+        <span class="security-icon">🔒</span>
+        <p style="font-size: 0.82rem; font-weight: 700; color: #34D399;">bcrypt</p>
+        <p style="font-size: 0.72rem; color: var(--muted);">Hash de senhas com salt rounds</p>
+      </div>
+
+      <div class="security-item" style="border-color: rgba(249,115,22,0.4);">
+        <span class="security-icon">⏱️</span>
+        <p style="font-size: 0.82rem; font-weight: 700; color: #FB923C;">Rate Limiting</p>
+        <p style="font-size: 0.72rem; color: var(--muted);">10 req/min em /auth/* (slowapi)</p>
+      </div>
+
+      <div class="security-item" style="border-color: rgba(139,92,246,0.4);">
+        <span class="security-icon">🛡️</span>
+        <p style="font-size: 0.82rem; font-weight: 700; color: #A78BFA;">Security Headers</p>
+        <p style="font-size: 0.72rem; color: var(--muted);">CSP, HSTS, X-Frame, X-XSS</p>
+      </div>
+
+      <div class="security-item" style="border-color: rgba(217,119,6,0.4);">
+        <span class="security-icon">📁</span>
+        <p style="font-size: 0.82rem; font-weight: 700; color: #FCD34D;">GridFS SHA-256</p>
+        <p style="font-size: 0.72rem; color: var(--muted);">Hash de integridade nos uploads</p>
+      </div>
+
+      <div class="security-item" style="border-color: rgba(16,185,129,0.4);">
+        <span class="security-icon">⚖️</span>
+        <p style="font-size: 0.82rem; font-weight: 700; color: #34D399;">LGPD</p>
+        <p style="font-size: 0.72rem; color: var(--muted);">GET meus-dados + DELETE conta</p>
+      </div>
+
+    </div>
+
+    <!-- CVEs tratados -->
+    <div class="anim-2" style="background: rgba(30,41,59,0.8); border: 1px solid var(--border); border-radius: 12px; padding: 0.9rem 1.2rem;">
+      <p style="font-size: 0.72rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px;">CVEs Tratados</p>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <span class="badge" style="background: rgba(220,38,38,0.15); color: #FCA5A5; border: 1px solid rgba(220,38,38,0.35);">🔴 CVE-2026-53538 python-multipart</span>
+        <span class="badge" style="background: rgba(220,38,38,0.15); color: #FCA5A5; border: 1px solid rgba(220,38,38,0.35);">🔴 CVE-2026-53539 python-multipart</span>
+        <span class="badge" style="background: rgba(220,38,38,0.15); color: #FCA5A5; border: 1px solid rgba(220,38,38,0.35);">🔴 CVE-2026-53540 python-multipart</span>
+        <span class="badge" style="background: rgba(100,116,139,0.15); color: #CBD5E1; border: 1px solid rgba(100,116,139,0.35);">pyasn1 atualizado</span>
+      </div>
+    </div>
+
+    <div class="anim-3" style="display: flex; gap: 8px;">
+      <span class="badge badge-green">Auditoria automática CI</span>
+      <span class="badge badge-blue">pip-audit no pipeline</span>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!--  SLIDE 9 — MOBILE + ENCERRAMENTO                              -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section class="slide" id="slide-8">
+  <div style="max-width: 880px; width: 100%; display: flex; flex-direction: column; gap: 1.4rem;">
+
+    <div class="anim-0" style="text-align: center;">
+      <p class="section-label" style="text-align: center;">App Mobile + Resultados</p>
+      <h2 class="slide-title" style="font-size: clamp(1.8rem, 3.5vw, 2.6rem);">Sistema end-to-end funcional</h2>
+      <p class="slide-subtitle" style="margin-top: 6px;">Pipeline automática, deploy contínuo, mobile-first</p>
+    </div>
+
+    <div class="anim-1" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+
+      <!-- Mobile app -->
+      <div class="card" style="border-color: rgba(37,99,235,0.4);">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+          <div style="width: 36px; height: 36px; background: rgba(37,99,235,0.2); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1rem;">📱</div>
+          <div>
+            <p style="font-size: 0.85rem; font-weight: 700; color: var(--text);">App Mobile</p>
+            <p style="font-size: 0.68rem; color: var(--muted);">Expo SDK 56 + expo-router</p>
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 8px;">
+          <div style="background: rgba(37,99,235,0.12); border: 1px solid rgba(37,99,235,0.25); border-radius: 8px; padding: 6px 8px; font-size: 0.68rem; color: #93C5FD; text-align: center;">🔍 Editais</div>
+          <div style="background: rgba(37,99,235,0.12); border: 1px solid rgba(37,99,235,0.25); border-radius: 8px; padding: 6px 8px; font-size: 0.68rem; color: #93C5FD; text-align: center;">✅ Checklist</div>
+          <div style="background: rgba(37,99,235,0.12); border: 1px solid rgba(37,99,235,0.25); border-radius: 8px; padding: 6px 8px; font-size: 0.68rem; color: #93C5FD; text-align: center;">📄 Documentos</div>
+          <div style="background: rgba(37,99,235,0.12); border: 1px solid rgba(37,99,235,0.25); border-radius: 8px; padding: 6px 8px; font-size: 0.68rem; color: #93C5FD; text-align: center;">🔔 Alertas</div>
+        </div>
+        <div style="background: rgba(37,99,235,0.12); border: 1px solid rgba(37,99,235,0.25); border-radius: 8px; padding: 6px 8px; font-size: 0.68rem; color: #93C5FD; text-align: center; margin-bottom: 8px;">📜 Histórico</div>
+        <span class="badge badge-blue" style="font-size: 0.65rem;">EAS Build automático</span>
+      </div>
+
+      <!-- Resultados -->
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div class="card" style="border-color: rgba(16,185,129,0.3);">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 1.1rem;">✅</span>
+            <p style="font-size: 0.8rem; font-weight: 600; color: #34D399;">Pipeline automática end-to-end</p>
+          </div>
+          <p style="font-size: 0.72rem; color: var(--muted); margin-top: 4px; padding-left: 28px;">ETL → Kafka → Spark → API → Mobile</p>
+        </div>
+        <div class="card" style="border-color: rgba(37,99,235,0.3);">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 1.1rem;">✅</span>
+            <p style="font-size: 0.8rem; font-weight: 600; color: #60A5FA;">Deploy contínuo automático</p>
+          </div>
+          <p style="font-size: 0.72rem; color: var(--muted); margin-top: 4px; padding-left: 28px;">6 workflows GitHub Actions integrados</p>
+        </div>
+        <div class="card" style="border-color: rgba(217,119,6,0.3);">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 1.1rem;">✅</span>
+            <p style="font-size: 0.8rem; font-weight: 600; color: #FCD34D;">Arquitetura Medallion completa</p>
+          </div>
+          <p style="font-size: 0.72rem; color: var(--muted); margin-top: 4px; padding-left: 28px;">Bronze → Silver → Gold em produção</p>
+        </div>
+        <div class="card" style="border-color: rgba(139,92,246,0.3);">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 1.1rem;">✅</span>
+            <p style="font-size: 0.8rem; font-weight: 600; color: #A78BFA;">IA com MCP + Claude API</p>
+          </div>
+          <p style="font-size: 0.72rem; color: var(--muted); margin-top: 4px; padding-left: 28px;">Chatbot Léo com tool calling</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Encerramento -->
+    <div class="anim-2" style="background: linear-gradient(135deg, rgba(37,99,235,0.15) 0%, rgba(217,119,6,0.1) 100%); border: 1px solid rgba(37,99,235,0.3); border-radius: 16px; padding: 1rem 1.5rem; text-align: center;">
+      <p style="font-size: 0.75rem; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600;">Acesse o projeto</p>
+      <p style="font-size: 1rem; font-weight: 800; color: #60A5FA; letter-spacing: 0.02em;">projeto-integrador.squareweb.app</p>
+    </div>
+
+    <!-- Obrigado + Equipe -->
+    <div class="anim-3" style="text-align: center;">
+      <p style="font-size: clamp(1.4rem, 2.5vw, 1.9rem); font-weight: 900; background: linear-gradient(135deg, #F8FAFC 0%, #60A5FA 50%, #D97706 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 10px;">Obrigado!</p>
+      <div class="team-grid" style="justify-content: center;">
+        <span class="team-pill">Luccas Fernandes</span>
+        <span class="team-pill">Gabriel Nogueira</span>
+        <span class="team-pill">Maria Eduarda Pernambuco</span>
+        <span class="team-pill">Luiz Henrique Cavalcanti</span>
+        <span class="team-pill">Nathalia Carvalho</span>
+        <span class="team-pill">Carlos Cavalcante</span>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ─────────────────────────────────────────────────────────────── -->
+<!--  NAVIGATION BAR                                                -->
+<!-- ─────────────────────────────────────────────────────────────── -->
+<div id="nav-bar">
+  <!-- Left: counter + prev -->
+  <div style="display: flex; align-items: center; gap: 10px;">
+    <button class="nav-btn" id="btn-prev" onclick="goTo(current - 1)" title="Anterior (←)">&#8592;</button>
+    <span id="slide-counter">1 / 9</span>
+  </div>
+
+  <!-- Center: dots -->
+  <div id="dots-container"></div>
+
+  <!-- Right: next -->
+  <div style="display: flex; align-items: center; gap: 10px;">
+    <button class="nav-btn" id="btn-next" onclick="goTo(current + 1)" title="Próximo (→)">&#8594;</button>
+  </div>
+</div>
+
+<!-- ─────────────────────────────────────────────────────────────── -->
+<!--  JAVASCRIPT                                                    -->
+<!-- ─────────────────────────────────────────────────────────────── -->
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const totalSlides = slides.length;
+  let current = 0;
+
+  // Build dots
+  const dotsContainer = document.getElementById('dots-container');
+  for (let i = 0; i < totalSlides; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'dot' + (i === 0 ? ' active' : '');
+    dot.addEventListener('click', () => goTo(i));
+    dotsContainer.appendChild(dot);
+  }
+
+  function updateProgress() {
+    const pct = ((current + 1) / totalSlides) * 100;
+    document.getElementById('progress-bar').style.width = pct + '%';
+    document.getElementById('slide-counter').textContent = (current + 1) + ' / ' + totalSlides;
+    document.querySelectorAll('.dot').forEach((d, i) => {
+      d.classList.toggle('active', i === current);
+    });
+  }
+
+  function goTo(n) {
+    if (slides[current]) slides[current].classList.remove('active');
+    current = ((n % totalSlides) + totalSlides) % totalSlides;
+    if (slides[current]) slides[current].classList.add('active');
+    updateProgress();
+  }
+
+  // Keyboard navigation
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      goTo(current + 1);
+    }
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      goTo(current - 1);
+    }
+    if (e.key === 'Home') { e.preventDefault(); goTo(0); }
+    if (e.key === 'End')  { e.preventDefault(); goTo(totalSlides - 1); }
+  });
+
+  // Touch / swipe support
+  let touchStartX = 0;
+  let touchStartY = 0;
+
+  document.addEventListener('touchstart', function(e) {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+  }, { passive: true });
+
+  document.addEventListener('touchend', function(e) {
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    const dy = e.changedTouches[0].clientY - touchStartY;
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 40) {
+      goTo(dx < 0 ? current + 1 : current - 1);
+    }
+  }, { passive: true });
+
+  // Init
+  updateProgress();
+</script>
+
+</body>
+</html>
