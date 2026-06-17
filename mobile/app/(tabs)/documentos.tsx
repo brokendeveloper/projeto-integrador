@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
-import { useFocusEffect } from "expo-router";
+import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import { api } from "../../services/api";
 import { Colors, Radius, Spacing, Shadow } from "../../constants/theme";
 
@@ -21,6 +21,13 @@ interface Documento {
   tamanho: number;
   tipo: string;
   criado_em: string;
+}
+
+interface ArquivoSelecionado {
+  uri: string;
+  name: string;
+  mimeType: string;
+  size: number;
 }
 
 function formatarBytes(bytes: number): string {
@@ -38,10 +45,26 @@ function getFileIcon(tipo: string): string {
 }
 
 export default function DocumentosScreen() {
-  const [editalId, setEditalId] = useState("");
+  const params = useLocalSearchParams<{ editalId?: string }>();
+  const [editalId, setEditalId] = useState(params.editalId ?? "");
   const [documentos, setDocumentos] = useState<Documento[]>([]);
   const [carregando, setCarregando] = useState(false);
   const [enviando, setEnviando] = useState(false);
+  const [arquivoSelecionado, setArquivoSelecionado] = useState<ArquivoSelecionado | null>(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (params.editalId) {
+        setEditalId(params.editalId);
+      }
+    }, [params.editalId])
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      if (editalId.trim()) carregarDocumentos();
+    }, [editalId])
+  );
 
   async function carregarDocumentos() {
     if (!editalId.trim()) return;
@@ -56,33 +79,47 @@ export default function DocumentosScreen() {
     }
   }
 
-  async function handleUpload() {
+  async function handleEscolherArquivo() {
     if (!editalId.trim()) {
-      Alert.alert("Atenção", "Informe o ID do edital antes de enviar.");
+      Alert.alert("Atenção", "Informe o ID do edital antes de selecionar um arquivo.");
       return;
     }
     const resultado = await DocumentPicker.getDocumentAsync({ copyToCacheDirectory: true });
     if (resultado.canceled) return;
-
     const arquivo = resultado.assets[0];
+    setArquivoSelecionado({
+      uri: arquivo.uri,
+      name: arquivo.name,
+      mimeType: arquivo.mimeType ?? "application/octet-stream",
+      size: arquivo.size ?? 0,
+    });
+  }
+
+  async function handleEnviar() {
+    if (!arquivoSelecionado) return;
     setEnviando(true);
     try {
       const form = new FormData();
       form.append("arquivo", {
-        uri: arquivo.uri,
-        name: arquivo.name,
-        type: arquivo.mimeType ?? "application/octet-stream",
+        uri: arquivoSelecionado.uri,
+        name: arquivoSelecionado.name,
+        type: arquivoSelecionado.mimeType,
       } as any);
 
       await api.post(`/editais/${editalId.trim()}/documentos`, form, {
         headers: { "Content-Type": "multipart/form-data" },
       });
+      setArquivoSelecionado(null);
       await carregarDocumentos();
     } catch {
-      Alert.alert("Erro", "Falha ao enviar o documento.");
+      Alert.alert("Erro", "Falha ao enviar o documento. Verifique o arquivo e tente novamente.");
     } finally {
       setEnviando(false);
     }
+  }
+
+  function handleCancelar() {
+    setArquivoSelecionado(null);
   }
 
   async function handleExcluir(docId: string, nome: string) {
@@ -154,22 +191,53 @@ export default function DocumentosScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Upload button */}
-      <TouchableOpacity
-        style={[styles.uploadButton, enviando && styles.uploadButtonDesabilitado]}
-        onPress={handleUpload}
-        disabled={enviando}
-        activeOpacity={0.85}
-      >
-        {enviando ? (
-          <ActivityIndicator color={Colors.white} size="small" />
+      {/* Arquivo selecionado — preview + confirmar */}
+      {arquivoSelecionado ? (
+        <View style={styles.previewCard}>
+          <View style={styles.previewIcone}>
+            <Ionicons name={getFileIcon(arquivoSelecionado.mimeType) as any} size={24} color={Colors.primary} />
+          </View>
+          <View style={styles.previewInfo}>
+            <Text style={styles.previewNome} numberOfLines={1}>
+              {arquivoSelecionado.name}
+            </Text>
+            <Text style={styles.previewTamanho}>{formatarBytes(arquivoSelecionado.size)}</Text>
+          </View>
+          <TouchableOpacity onPress={handleCancelar} style={styles.previewCancelar} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Ionicons name="close-circle" size={22} color={Colors.textLight} />
+          </TouchableOpacity>
+        </View>
+      ) : null}
+
+      {/* Botões de ação */}
+      <View style={styles.botoesArea}>
+        {arquivoSelecionado ? (
+          <TouchableOpacity
+            style={[styles.botaoEnviar, enviando && styles.botaoDesabilitado]}
+            onPress={handleEnviar}
+            disabled={enviando}
+            activeOpacity={0.85}
+          >
+            {enviando ? (
+              <ActivityIndicator color={Colors.white} size="small" />
+            ) : (
+              <>
+                <Ionicons name="cloud-upload-outline" size={18} color={Colors.white} />
+                <Text style={styles.botaoEnviarTexto}>  Confirmar envio</Text>
+              </>
+            )}
+          </TouchableOpacity>
         ) : (
-          <>
-            <Ionicons name="cloud-upload-outline" size={18} color={Colors.white} />
-            <Text style={styles.uploadTexto}>  Enviar documento</Text>
-          </>
+          <TouchableOpacity
+            style={styles.botaoEscolher}
+            onPress={handleEscolherArquivo}
+            activeOpacity={0.85}
+          >
+            <Ionicons name="attach-outline" size={18} color={Colors.white} />
+            <Text style={styles.botaoEnviarTexto}>  Selecionar arquivo</Text>
+          </TouchableOpacity>
         )}
-      </TouchableOpacity>
+      </View>
 
       {carregando ? (
         <ActivityIndicator style={{ margin: 32 }} color={Colors.primary} size="large" />
@@ -184,7 +252,7 @@ export default function DocumentosScreen() {
               <Ionicons name="folder-open-outline" size={52} color={Colors.border} />
               <Text style={styles.vazioTexto}>Nenhum documento enviado.</Text>
               <Text style={styles.vazioSub}>
-                Carregue um edital e envie os documentos de habilitação.
+                Selecione um arquivo e confirme o envio.
               </Text>
             </View>
           }
@@ -236,20 +304,71 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     fontSize: 14,
   },
-  uploadButton: {
+  previewCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    margin: Spacing.md,
+    marginBottom: 0,
+    backgroundColor: Colors.white,
+    borderRadius: Radius.md,
+    padding: Spacing.md,
+    borderWidth: 1.5,
+    borderColor: Colors.primary + "50",
+    ...Shadow.sm,
+  },
+  previewIcone: {
+    width: 44,
+    height: 44,
+    borderRadius: Radius.sm,
+    backgroundColor: Colors.primaryLight,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: Spacing.sm,
+  },
+  previewInfo: {
+    flex: 1,
+  },
+  previewNome: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: Colors.text,
+    marginBottom: 2,
+  },
+  previewTamanho: {
+    fontSize: 11,
+    color: Colors.textSecondary,
+  },
+  previewCancelar: {
+    padding: 4,
+    marginLeft: Spacing.sm,
+  },
+  botoesArea: {
+    paddingHorizontal: Spacing.md,
+    paddingTop: Spacing.md,
+    paddingBottom: Spacing.sm,
+  },
+  botaoEscolher: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    margin: Spacing.md,
+    backgroundColor: Colors.primary,
+    borderRadius: Radius.md,
+    padding: 14,
+    ...Shadow.sm,
+  },
+  botaoEnviar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     backgroundColor: Colors.success,
     borderRadius: Radius.md,
     padding: 14,
     ...Shadow.sm,
   },
-  uploadButtonDesabilitado: {
+  botaoDesabilitado: {
     opacity: 0.65,
   },
-  uploadTexto: {
+  botaoEnviarTexto: {
     color: Colors.white,
     fontWeight: "700",
     fontSize: 15,
