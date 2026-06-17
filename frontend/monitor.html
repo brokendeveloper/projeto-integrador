@@ -135,13 +135,13 @@
       <input id="modal-password" type="password" placeholder="Senha" autocomplete="current-password"
              class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-2.5 text-sm
                     text-zinc-100 placeholder-zinc-500 outline-none focus:border-zinc-500 transition" />
-      <button id="modal-login-btn" onclick="doModalLogin()"
+      <button id="modal-login-btn"
               class="w-full bg-white text-zinc-900 font-semibold rounded-lg py-2.5 text-sm
                      hover:bg-zinc-200 transition active:scale-95">
         Entrar e Executar
       </button>
     </div>
-    <button onclick="closeLoginModal()"
+    <button id="modal-cancel-btn"
             class="mt-4 w-full text-xs text-zinc-500 hover:text-zinc-300 transition text-center">
       Cancelar
     </button>
@@ -188,7 +188,7 @@
       </div>
       <p class="text-sm text-zinc-400">Arquitetura Medallion · ETL + Spark Batch + Kafka Streaming</p>
     </div>
-    <button onclick="loadStatus()"
+    <button id="refresh-btn"
             class="flex items-center gap-2 px-4 py-2 rounded-lg border border-zinc-700 text-sm
                    text-zinc-300 hover:text-white hover:border-zinc-500 transition active:scale-95 self-start sm:self-auto">
       <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
@@ -417,7 +417,7 @@
           Requer autenticação.
         </p>
       </div>
-      <button id="spark-btn" onclick="executarSpark()"
+      <button id="spark-btn"
               class="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold
                      bg-orange-500 hover:bg-orange-400 text-white transition active:scale-95 flex-shrink-0
                      disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100">
@@ -440,6 +440,7 @@
 </footer>
 
 <script>
+  window.__cfRLUnblockHandlers = true;
 // ─── Auth ──────────────────────────────────────────────────────────────────
 let _token = localStorage.getItem('licitame_token') || '';
 
@@ -743,6 +744,10 @@ async function executarSpark() {
 }
 
 // ─── Init ──────────────────────────────────────────────────────────────────
+document.getElementById('refresh-btn').addEventListener('click', loadStatus);
+document.getElementById('modal-login-btn').addEventListener('click', doModalLogin);
+document.getElementById('modal-cancel-btn').addEventListener('click', closeLoginModal);
+document.getElementById('spark-btn').addEventListener('click', executarSpark);
 loadStatus();
 startCountdown();
 </script>
