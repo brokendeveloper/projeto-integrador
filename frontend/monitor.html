@@ -410,11 +410,13 @@
       <div>
         <div class="flex items-center gap-2 mb-1">
           <span class="text-lg">⚡</span>
-          <span class="text-sm font-semibold text-white">Executar Spark Agora</span>
+          <span class="text-sm font-semibold text-white">Executar Spark Batch Agora</span>
         </div>
         <p class="text-xs text-zinc-400">
-          Dispara o job PySpark manualmente via <code class="text-zinc-300 font-mono">POST /analytics/executar-spark</code>.
-          Requer autenticação.
+          Roda apenas a <strong class="text-zinc-300">transformação PySpark</strong> (Bronze → Silver/Gold)
+          nos dados já existentes no MongoDB. <strong class="text-zinc-300">Não extrai dados novos</strong>
+          — o ETL de coleta roda automaticamente via GitHub Actions às 03:00 UTC.
+          Requer autenticação. Pode falhar se Java não estiver disponível no servidor.
         </p>
       </div>
       <button id="spark-btn"
@@ -632,14 +634,11 @@ function populateStatus(data) {
     setBadge('badge-spark', '⬤ IDLE', 'idle');
   }
 
-  // Kafka
-  const kafka = data.kafka || {};
-  const kafkaActive = !!kafka.ativo;
+  // Kafka — API retorna kafka_ativo (bool) no nível raiz do objeto
+  const kafkaActive = !!data.kafka_ativo;
   setBadge('badge-kafka', kafkaActive ? '⬤ ATIVO' : '⬤ INATIVO', kafkaActive ? 'live' : 'offline');
-  document.getElementById('kafka-topic-val').textContent = kafka.topico || 'pncp.contratos.novos';
-  document.getElementById('kafka-rate').textContent      = kafka.mensagens_por_min != null
-    ? fmtNum(kafka.mensagens_por_min) + ' msg/min'
-    : '—';
+  document.getElementById('kafka-topic-val').textContent = 'pncp.contratos.novos';
+  document.getElementById('kafka-rate').textContent = '—';
 }
 
 function populateFallback() {
