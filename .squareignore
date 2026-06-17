@@ -1,0 +1,67 @@
+# Ambiente virtual
+.venv/
+venv/
+env/
+
+# Cache Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Banco de dados local
+*.db
+*.sqlite3
+
+# IDE
+.vscode/
+.idea/
+.claude/
+
+# macOS
+.DS_Store
+
+# Jupyter
+.ipynb_checkpoints/
+notebooks/
+
+# Dados gerados
+*.parquet
+data/
+*.csv
+
+# App mobile (não vai para o servidor)
+mobile/
+
+# Dashboards Streamlit (não necessários na API)
+dashboards/
+
+# Spark (roda separado)
+spark/
+
+# MCP server standalone
+mcp_server/
+
+# Zips antigos
+*.zip
+
+# Testes
+tests/
+.pytest_cache/
+pytest.ini
+
+# GitHub Actions
+.github/
+
+# Docs
+docs/
+
+# Git
+.git/
+
+# ETL (roda via cron separado no workflow)
+etl/
+main.py
+
+# Secrets
+.env
+.env.*
