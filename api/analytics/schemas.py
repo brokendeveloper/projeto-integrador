@@ -72,3 +72,19 @@ class SparkSummaryResponse(BaseModel):
     mei_min_valor: Optional[float] = Field(None)
     mei_buckets: list[SparkMEIBucket] = Field(default_factory=list, description="Histograma de valores (buckets de R$ 10k)")
     mei_sample: list[SparkContratoItem] = Field(default_factory=list, description="Primeiros 20 contratos MEI-favoráveis")
+
+
+class CamadaStatus(BaseModel):
+    nome: str
+    colecao: str
+    documentos: int
+    icone: str
+
+class PipelineStatusResponse(BaseModel):
+    api_status: str = Field("ok", description="Status da API")
+    kafka_ativo: bool = Field(False, description="Se Kafka está configurado e ativo")
+    camadas: list[CamadaStatus] = Field(default_factory=list, description="Status das camadas Medallion")
+    etl_ultima_execucao: Optional[str] = Field(None, description="Timestamp do documento mais recente no bronze")
+    spark_ultima_execucao: Optional[str] = Field(None, description="Timestamp da última execução PySpark")
+    total_contratos: int = Field(0)
+    total_mei: int = Field(0)

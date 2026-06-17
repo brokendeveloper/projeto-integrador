@@ -5,6 +5,7 @@ from api.dependencies import get_db, get_usuario_atual
 from .schemas import (
     ContratosMEIResponse,
     EstatisticasResponse,
+    PipelineStatusResponse,
     SparkJobResponse,
     SparkSummaryResponse,
     TopOrgaosResponse,
@@ -14,6 +15,7 @@ from .service import (
     obter_contratos_mei,
     obter_dados_spark,
     obter_estatisticas,
+    obter_status_pipeline,
     obter_top_orgaos,
 )
 
@@ -103,3 +105,18 @@ async def executar_pipeline_spark(
     _: dict = Depends(get_usuario_atual),
 ):
     return await executar_spark()
+
+
+@router.get(
+    "/pipeline-status",
+    response_model=PipelineStatusResponse,
+    summary="Status público da pipeline Medallion",
+    description=(
+        "Retorna contagens de documentos por camada (Bronze/Silver/Gold), "
+        "status do Kafka, timestamps de ETL e Spark. Endpoint público — sem autenticação."
+    ),
+)
+async def pipeline_status(
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
+    return await obter_status_pipeline(db)

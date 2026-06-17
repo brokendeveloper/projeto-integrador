@@ -260,6 +260,61 @@ async def _aguardar_spark(proc: asyncio.subprocess.Process) -> None:
 
 # ── Funções utilitárias reutilizadas pelo módulo MCP ──────────────────────────
 
+async def obter_status_pipeline(db: AsyncIOMotorDatabase) -> "PipelineStatusResponse":
+    """Retorna status completo da pipeline Medallion para o monitor."""
+    from .schemas import CamadaStatus, PipelineStatusResponse
+    import os
+
+    # Contagens das camadas
+    bronze = await db["contratos"].count_documents({})
+    silver = await db["silver_contratos"].count_documents({})
+    gold_mei = await db["gold_contratos_mei"].count_documents({})
+    gold_top = await db["gold_top_orgaos"].count_documents({})
+
+    camadas = [
+        CamadaStatus(nome="Bronze", colecao="contratos", documentos=bronze, icone="🟫"),
+        CamadaStatus(nome="Silver", colecao="silver_contratos", documentos=silver, icone="⚪"),
+        CamadaStatus(nome="Gold MEI", colecao="gold_contratos_mei", documentos=gold_mei, icone="🟡"),
+        CamadaStatus(nome="Gold Top Órgãos", colecao="gold_top_orgaos", documentos=gold_top, icone="🏆"),
+    ]
+
+    # Timestamp ETL (documento mais recente no bronze)
+    etl_ts = None
+    try:
+        doc = await db["contratos"].find_one(
+            {"_etl_timestamp": {"$exists": True}},
+            sort=[("_etl_timestamp", -1)],
+        )
+        if doc and doc.get("_etl_timestamp"):
+            etl_ts = str(doc["_etl_timestamp"])
+    except Exception:
+        pass
+
+    # Timestamp Spark (CSV mais recente)
+    spark_ts = None
+    try:
+        spark_dir = Path(__file__).resolve().parents[2] / "spark" / "output"
+        csvs = list(spark_dir.glob("*.csv"))
+        if csvs:
+            newest = max(csvs, key=lambda p: p.stat().st_mtime)
+            from datetime import datetime, timezone
+            spark_ts = datetime.fromtimestamp(newest.stat().st_mtime, tz=timezone.utc).isoformat()
+    except Exception:
+        pass
+
+    kafka_ativo = bool(os.getenv("KAFKA_BOOTSTRAP_SERVERS", ""))
+
+    return PipelineStatusResponse(
+        api_status="ok",
+        kafka_ativo=kafka_ativo,
+        camadas=camadas,
+        etl_ultima_execucao=etl_ts,
+        spark_ultima_execucao=spark_ts,
+        total_contratos=bronze,
+        total_mei=gold_mei,
+    )
+
+
 async def buscar_contratos_por_palavra(
     db: AsyncIOMotorDatabase, palavra_chave: str, limite: int = 10
 ) -> list[dict[str, Any]]:

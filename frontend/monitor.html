@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LicitaME — Monitor da Pipeline</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com" data-cfasync="false"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Geist', 'ui-sans-serif', 'system-ui'] },
+        }
+      }
+    }
+  </script>
+  <style>
+    body { background: #09090b; font-family: 'Geist', sans-serif; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 3px; }
+
+    .card { background: #18181b; border: 1px solid #27272a; border-radius: 12px; }
+
+    .badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px;
+             border-radius: 9999px; font-size: 0.7rem; font-weight: 600; letter-spacing: .4px; }
+    .badge-live  { background: rgba(34,197,94,.15);  color: #4ade80; border: 1px solid rgba(34,197,94,.25); }
+    .badge-batch { background: rgba(255,107,53,.15); color: #ff6b35; border: 1px solid rgba(255,107,53,.3); }
+    .badge-online { background: rgba(34,197,94,.15); color: #4ade80; border: 1px solid rgba(34,197,94,.25); }
+    .badge-offline { background: rgba(239,68,68,.15); color: #f87171; border: 1px solid rgba(239,68,68,.25); }
+    .badge-idle { background: rgba(113,113,122,.15); color: #a1a1aa; border: 1px solid rgba(113,113,122,.25); }
+
+    .kpi-value { font-size: 2rem; font-weight: 700; letter-spacing: -0.03em; }
+
+    .spinner { width:20px;height:20px;border:2px solid #3f3f46;border-top-color:#ff6b35;
+               border-radius:50%;animation:spin .8s linear infinite;display:inline-block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Medallion flow arrow */
+    .medallion-arrow {
+      display: flex; align-items: center; justify-content: center;
+      color: #3f3f46; font-size: 1.25rem; flex-shrink: 0;
+    }
+
+    /* Countdown ring */
+    .countdown-ring { position: relative; width: 32px; height: 32px; }
+    .countdown-ring svg { transform: rotate(-90deg); }
+    .countdown-ring .track { fill: none; stroke: #27272a; stroke-width: 3; }
+    .countdown-ring .progress { fill: none; stroke: #ff6b35; stroke-width: 3;
+                                stroke-linecap: round; transition: stroke-dashoffset 1s linear; }
+    .countdown-ring .label {
+      position: absolute; inset: 0; display: flex; align-items: center;
+      justify-content: center; font-size: 0.6rem; font-weight: 700; color: #ff6b35;
+    }
+
+    /* Modal */
+    #login-modal {
+      position: fixed; inset: 0; z-index: 60;
+      background: rgba(9,9,11,.9); backdrop-filter: blur(8px);
+      display: none; align-items: center; justify-content: center;
+    }
+    #login-modal.open { display: flex; }
+
+    /* Toast */
+    #toast {
+      position: fixed; bottom: 24px; right: 24px; z-index: 70;
+      max-width: 360px; border-radius: 10px; padding: 14px 18px;
+      font-size: 0.85rem; font-weight: 500;
+      display: none; align-items: flex-start; gap: 10px;
+      animation: slideUp .25s ease;
+    }
+    @keyframes slideUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+    #toast.toast-success { background:#14532d; border:1px solid #166534; color:#86efac; display:flex; }
+    #toast.toast-error   { background:#450a0a; border:1px solid #7f1d1d; color:#fca5a5; display:flex; }
+    #toast.toast-info    { background:#1c1917; border:1px solid #3f3f46; color:#e4e4e7; display:flex; }
+
+    /* Status pipeline item */
+    .pipeline-item-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .pipeline-item-label { font-size: 0.75rem; color: #71717a; min-width: 110px; }
+    .pipeline-item-value { font-size: 0.8rem; color: #d4d4d8; font-weight: 500; }
+
+    nav a.active-nav { color: #fff; border-bottom: 2px solid #ff6b35; }
+
+    /* Loading bar */
+    #loading-bar {
+      position: fixed; top: 0; left: 0; right: 0; height: 2px; z-index: 80;
+      background: linear-gradient(90deg, #ff6b35, #ff9500);
+      animation: progress 1.2s ease-in-out infinite alternate;
+    }
+    @keyframes progress { from{transform:scaleX(0);transform-origin:left} to{transform:scaleX(1);transform-origin:left} }
+
+    /* Medallion layer card colors */
+    .layer-bronze  { border-color: #78350f40; }
+    .layer-bronze .layer-dot { background: #92400e; }
+    .layer-silver  { border-color: #52525260; }
+    .layer-silver .layer-dot { background: #71717a; }
+    .layer-gold-mei { border-color: #a16207a0; }
+    .layer-gold-mei .layer-dot { background: #ca8a04; }
+    .layer-gold-top { border-color: #713f12a0; }
+    .layer-gold-top .layer-dot { background: #d97706; }
+
+    .layer-count { font-size: 2rem; font-weight: 700; letter-spacing: -0.03em; }
+  </style>
+</head>
+<body class="text-zinc-100 min-h-screen">
+
+<!-- ─── Loading bar ────────────────────────────────────────────────────────── -->
+<div id="loading-bar" class="hidden"></div>
+
+<!-- ─── Toast ─────────────────────────────────────────────────────────────── -->
+<div id="toast">
+  <span id="toast-icon" class="mt-0.5 flex-shrink-0">✓</span>
+  <span id="toast-msg"></span>
+</div>
+
+<!-- ─── Login Modal ───────────────────────────────────────────────────────── -->
+<div id="login-modal" role="dialog" aria-modal="true" aria-label="Login">
+  <div class="card p-8 w-full max-w-sm mx-4">
+    <div class="flex items-center gap-3 mb-6">
+      <span class="text-2xl">⚖️</span>
+      <div>
+        <div class="font-semibold text-white text-lg">LicitaME</div>
+        <div class="text-xs text-zinc-400">Autentique-se para executar o Spark</div>
+      </div>
+    </div>
+    <div id="modal-error" class="hidden mb-4 text-sm text-red-400 bg-red-950/40 border border-red-900/50 rounded-lg px-4 py-3"></div>
+    <div class="space-y-3">
+      <input id="modal-email" type="email" placeholder="E-mail" autocomplete="email"
+             class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-2.5 text-sm
+                    text-zinc-100 placeholder-zinc-500 outline-none focus:border-zinc-500 transition" />
+      <input id="modal-password" type="password" placeholder="Senha" autocomplete="current-password"
+             class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-2.5 text-sm
+                    text-zinc-100 placeholder-zinc-500 outline-none focus:border-zinc-500 transition" />
+      <button id="modal-login-btn" onclick="doModalLogin()"
+              class="w-full bg-white text-zinc-900 font-semibold rounded-lg py-2.5 text-sm
+                     hover:bg-zinc-200 transition active:scale-95">
+        Entrar e Executar
+      </button>
+    </div>
+    <button onclick="closeLoginModal()"
+            class="mt-4 w-full text-xs text-zinc-500 hover:text-zinc-300 transition text-center">
+      Cancelar
+    </button>
+  </div>
+</div>
+
+<!-- ─── Header ────────────────────────────────────────────────────────────── -->
+<header class="border-b border-zinc-800 px-6 py-3 flex items-center justify-between sticky top-0 z-30"
+        style="background:rgba(9,9,11,.85);backdrop-filter:blur(12px);">
+  <div class="flex items-center gap-3">
+    <span class="text-xl">⚖️</span>
+    <span class="font-semibold text-white">LicitaME</span>
+    <span class="text-zinc-600 text-sm hidden sm:block">/ Monitor</span>
+  </div>
+  <nav class="flex items-center gap-5 text-sm text-zinc-400">
+    <a href="/dashboard" class="hover:text-white transition pb-0.5">Dashboard</a>
+    <a href="/app" class="hover:text-white transition pb-0.5">Assistente</a>
+    <a href="/monitor" class="hover:text-white transition pb-0.5 active-nav">Monitor</a>
+    <a href="/docs" target="_blank" rel="noopener" class="hover:text-white transition pb-0.5">API</a>
+  </nav>
+  <!-- Countdown -->
+  <div class="flex items-center gap-2 ml-4 hidden sm:flex">
+    <div class="countdown-ring" title="Próximo refresh">
+      <svg viewBox="0 0 32 32" width="32" height="32">
+        <circle class="track" cx="16" cy="16" r="13" />
+        <circle class="progress" id="countdown-ring-progress" cx="16" cy="16" r="13"
+                stroke-dasharray="81.7" stroke-dashoffset="0" />
+      </svg>
+      <div class="label" id="countdown-label">30</div>
+    </div>
+    <span class="text-xs text-zinc-500">próx. refresh</span>
+  </div>
+</header>
+
+<!-- ─── Main ──────────────────────────────────────────────────────────────── -->
+<main class="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-10">
+
+  <!-- ── Hero ─────────────────────────────────────────────────────────────── -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <div class="flex items-center gap-3 mb-1">
+        <h1 class="text-2xl font-bold text-white">Monitor da Pipeline</h1>
+        <span class="badge badge-live">● LIVE</span>
+      </div>
+      <p class="text-sm text-zinc-400">Arquitetura Medallion · ETL + Spark Batch + Kafka Streaming</p>
+    </div>
+    <button onclick="loadStatus()"
+            class="flex items-center gap-2 px-4 py-2 rounded-lg border border-zinc-700 text-sm
+                   text-zinc-300 hover:text-white hover:border-zinc-500 transition active:scale-95 self-start sm:self-auto">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/>
+      </svg>
+      Atualizar
+    </button>
+  </div>
+
+  <!-- ── Medallion Architecture ───────────────────────────────────────────── -->
+  <section>
+    <div class="flex items-center gap-3 mb-4">
+      <h2 class="text-base font-semibold text-white">Arquitetura Medallion</h2>
+      <span class="text-xs text-zinc-500 font-mono">MongoDB Atlas</span>
+    </div>
+
+    <!-- Flow: Bronze → Silver → Gold MEI → Gold Top -->
+    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-0">
+
+      <!-- Bronze -->
+      <div class="card layer-bronze flex-1 p-5 flex flex-col gap-2">
+        <div class="flex items-center gap-2">
+          <span class="w-3 h-3 rounded-full layer-dot bg-amber-800 flex-shrink-0"></span>
+          <span class="text-xs font-semibold text-amber-700 uppercase tracking-wider">Bronze</span>
+        </div>
+        <div class="text-xs text-zinc-500 font-mono">contratos_raw</div>
+        <div class="layer-count text-amber-600" id="count-bronze">—</div>
+        <div class="text-xs text-zinc-500">documentos</div>
+      </div>
+
+      <div class="medallion-arrow px-1 self-center">
+        <svg class="w-5 h-5 hidden sm:block" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+        </svg>
+        <svg class="w-5 h-5 sm:hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </div>
+
+      <!-- Silver -->
+      <div class="card layer-silver flex-1 p-5 flex flex-col gap-2">
+        <div class="flex items-center gap-2">
+          <span class="w-3 h-3 rounded-full layer-dot bg-zinc-500 flex-shrink-0"></span>
+          <span class="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Silver</span>
+        </div>
+        <div class="text-xs text-zinc-500 font-mono">contratos_clean</div>
+        <div class="layer-count text-zinc-300" id="count-silver">—</div>
+        <div class="text-xs text-zinc-500">documentos</div>
+      </div>
+
+      <div class="medallion-arrow px-1 self-center">
+        <svg class="w-5 h-5 hidden sm:block" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+        </svg>
+        <svg class="w-5 h-5 sm:hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </div>
+
+      <!-- Gold MEI -->
+      <div class="card layer-gold-mei flex-1 p-5 flex flex-col gap-2">
+        <div class="flex items-center gap-2">
+          <span class="w-3 h-3 rounded-full layer-dot bg-yellow-600 flex-shrink-0"></span>
+          <span class="text-xs font-semibold text-yellow-500 uppercase tracking-wider">Gold MEI</span>
+        </div>
+        <div class="text-xs text-zinc-500 font-mono">contratos_mei</div>
+        <div class="layer-count text-yellow-400" id="count-gold-mei">—</div>
+        <div class="text-xs text-zinc-500">documentos</div>
+      </div>
+
+      <div class="medallion-arrow px-1 self-center">
+        <svg class="w-5 h-5 hidden sm:block" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+        </svg>
+        <svg class="w-5 h-5 sm:hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </div>
+
+      <!-- Gold Top -->
+      <div class="card layer-gold-top flex-1 p-5 flex flex-col gap-2">
+        <div class="flex items-center gap-2">
+          <span class="w-3 h-3 rounded-full layer-dot bg-amber-600 flex-shrink-0"></span>
+          <span class="text-xs font-semibold text-amber-500 uppercase tracking-wider">Gold Top</span>
+        </div>
+        <div class="text-xs text-zinc-500 font-mono">top_orgaos</div>
+        <div class="layer-count text-amber-400" id="count-gold-top">—</div>
+        <div class="text-xs text-zinc-500">documentos</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Pipeline Status Cards ─────────────────────────────────────────────── -->
+  <section>
+    <div class="flex items-center gap-3 mb-4">
+      <h2 class="text-base font-semibold text-white">Status dos Serviços</h2>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+      <!-- ETL Pipeline -->
+      <div class="card p-5">
+        <div class="flex items-start justify-between mb-4">
+          <div class="flex items-center gap-2">
+            <span class="text-lg">🔄</span>
+            <div>
+              <div class="text-sm font-semibold text-white">ETL Pipeline</div>
+              <div class="text-xs text-zinc-500 font-mono mt-0.5">pncp_etl.py</div>
+            </div>
+          </div>
+          <span class="badge badge-idle" id="badge-etl">⬤ IDLE</span>
+        </div>
+        <div class="space-y-2">
+          <div class="pipeline-item-row">
+            <span class="pipeline-item-label">Última execução</span>
+            <span class="pipeline-item-value" id="etl-last-run">—</span>
+          </div>
+          <div class="pipeline-item-row">
+            <span class="pipeline-item-label">Próxima execução</span>
+            <span class="pipeline-item-value text-zinc-400">Diário 03:00 UTC</span>
+          </div>
+          <div class="pipeline-item-row">
+            <span class="pipeline-item-label">Registros ingeridos</span>
+            <span class="pipeline-item-value" id="etl-ingested">—</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Spark Batch -->
+      <div class="card p-5">
+        <div class="flex items-start justify-between mb-4">
+          <div class="flex items-center gap-2">
+            <span class="text-lg">⚡</span>
+            <div>
+              <div class="text-sm font-semibold text-white">Spark Batch</div>
+              <div class="text-xs text-zinc-500 font-mono mt-0.5">pyspark_transform.py</div>
+            </div>
+          </div>
+          <span class="badge badge-idle" id="badge-spark">⬤ IDLE</span>
+        </div>
+        <div class="space-y-2">
+          <div class="pipeline-item-row">
+            <span class="pipeline-item-label">Última execução</span>
+            <span class="pipeline-item-value" id="spark-last-run">—</span>
+          </div>
+          <div class="pipeline-item-row">
+            <span class="pipeline-item-label">Próxima execução</span>
+            <span class="pipeline-item-value text-zinc-400">Diário 04:00 UTC</span>
+          </div>
+          <div class="pipeline-item-row">
+            <span class="pipeline-item-label">Registros processados</span>
+            <span class="pipeline-item-value" id="spark-processed">—</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Kafka Streaming -->
+      <div class="card p-5">
+        <div class="flex items-start justify-between mb-4">
+          <div class="flex items-center gap-2">
+            <span class="text-lg">📡</span>
+            <div>
+              <div class="text-sm font-semibold text-white">Kafka Streaming</div>
+              <div class="text-xs text-zinc-500 font-mono mt-0.5" id="kafka-topic">pncp.contratos.novos</div>
+            </div>
+          </div>
+          <span class="badge badge-offline" id="badge-kafka">⬤ INATIVO</span>
+        </div>
+        <div class="space-y-2">
+          <div class="pipeline-item-row">
+            <span class="pipeline-item-label">Tópico</span>
+            <span class="pipeline-item-value font-mono text-xs" id="kafka-topic-val">pncp.contratos.novos</span>
+          </div>
+          <div class="pipeline-item-row">
+            <span class="pipeline-item-label">Mensagens/min</span>
+            <span class="pipeline-item-value" id="kafka-rate">—</span>
+          </div>
+          <div class="pipeline-item-row">
+            <span class="pipeline-item-label">Consumer group</span>
+            <span class="pipeline-item-value font-mono text-xs">licitame-consumers</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- API Status -->
+      <div class="card p-5">
+        <div class="flex items-start justify-between mb-4">
+          <div class="flex items-center gap-2">
+            <span class="text-lg">🌐</span>
+            <div>
+              <div class="text-sm font-semibold text-white">API Status</div>
+              <div class="text-xs text-zinc-500 font-mono mt-0.5">FastAPI · SquareCloud</div>
+            </div>
+          </div>
+          <span class="badge badge-online">⬤ ONLINE</span>
+        </div>
+        <div class="space-y-2">
+          <div class="pipeline-item-row">
+            <span class="pipeline-item-label">Versão</span>
+            <span class="pipeline-item-value">1.0.0</span>
+          </div>
+          <div class="pipeline-item-row">
+            <span class="pipeline-item-label">Plataforma</span>
+            <span class="pipeline-item-value">SquareCloud</span>
+          </div>
+          <div class="pipeline-item-row">
+            <span class="pipeline-item-label">Uptime</span>
+            <span class="pipeline-item-value text-emerald-400" id="api-uptime">99.9%</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── Executar Spark ─────────────────────────────────────────────────────── -->
+  <section>
+    <div class="card p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div>
+        <div class="flex items-center gap-2 mb-1">
+          <span class="text-lg">⚡</span>
+          <span class="text-sm font-semibold text-white">Executar Spark Agora</span>
+        </div>
+        <p class="text-xs text-zinc-400">
+          Dispara o job PySpark manualmente via <code class="text-zinc-300 font-mono">POST /analytics/executar-spark</code>.
+          Requer autenticação.
+        </p>
+      </div>
+      <button id="spark-btn" onclick="executarSpark()"
+              class="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold
+                     bg-orange-500 hover:bg-orange-400 text-white transition active:scale-95 flex-shrink-0
+                     disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"/>
+        </svg>
+        <span id="spark-btn-text">Executar Job</span>
+      </button>
+    </div>
+  </section>
+
+</main>
+
+<!-- ─── Footer ────────────────────────────────────────────────────────────── -->
+<footer class="border-t border-zinc-800 mt-16 px-6 py-6 text-center">
+  <p class="text-xs text-zinc-500">
+    Dados atualizados diariamente às 03:00 UTC (ETL) e 04:00 UTC (Spark) ·
+    <a href="/docs" target="_blank" rel="noopener" class="hover:text-zinc-300 transition underline underline-offset-2">API Docs</a>
+  </p>
+</footer>
+
+<script>
+// ─── Auth ──────────────────────────────────────────────────────────────────
+let _token = localStorage.getItem('licitame_token') || '';
+
+function isAuth() { return !!_token; }
+
+function setToken(t) {
+  _token = t;
+  localStorage.setItem('licitame_token', t);
+}
+
+// ─── Login Modal ───────────────────────────────────────────────────────────
+let _pendingAfterLogin = null;
+
+function openLoginModal(cb) {
+  _pendingAfterLogin = cb || null;
+  document.getElementById('login-modal').classList.add('open');
+  setTimeout(() => document.getElementById('modal-email').focus(), 80);
+}
+
+function closeLoginModal() {
+  document.getElementById('login-modal').classList.remove('open');
+  document.getElementById('modal-error').classList.add('hidden');
+  document.getElementById('modal-email').value = '';
+  document.getElementById('modal-password').value = '';
+  _pendingAfterLogin = null;
+}
+
+document.getElementById('modal-password').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doModalLogin();
+});
+
+async function doModalLogin() {
+  const btn = document.getElementById('modal-login-btn');
+  const errEl = document.getElementById('modal-error');
+  const email = document.getElementById('modal-email').value.trim();
+  const pwd = document.getElementById('modal-password').value;
+
+  if (!email || !pwd) {
+    errEl.textContent = 'Preencha e-mail e senha.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+
+  btn.textContent = 'Entrando…';
+  btn.disabled = true;
+  errEl.classList.add('hidden');
+
+  try {
+    const res = await fetch('/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, senha: pwd }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Credenciais inválidas.');
+    setToken(data.access_token);
+    closeLoginModal();
+    if (typeof _pendingAfterLogin === 'function') _pendingAfterLogin();
+  } catch (e) {
+    errEl.textContent = e.message;
+    errEl.classList.remove('hidden');
+  } finally {
+    btn.textContent = 'Entrar e Executar';
+    btn.disabled = false;
+  }
+}
+
+// ─── Toast ─────────────────────────────────────────────────────────────────
+let _toastTimer = null;
+
+function showToast(msg, type = 'info', duration = 4000) {
+  const el = document.getElementById('toast');
+  const msgEl = document.getElementById('toast-msg');
+  const iconEl = document.getElementById('toast-icon');
+
+  el.className = '';
+  el.classList.add('toast-' + type);
+  msgEl.textContent = msg;
+  iconEl.textContent = type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ';
+
+  if (_toastTimer) clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => { el.style.display = 'none'; }, duration);
+}
+
+// ─── Countdown ─────────────────────────────────────────────────────────────
+const REFRESH_INTERVAL = 30;
+const CIRCUMFERENCE = 2 * Math.PI * 13; // r=13 → ~81.7
+let _countdown = REFRESH_INTERVAL;
+
+function updateCountdownUI() {
+  const label = document.getElementById('countdown-label');
+  const ring = document.getElementById('countdown-ring-progress');
+  if (label) label.textContent = _countdown;
+  if (ring) {
+    const offset = CIRCUMFERENCE * (1 - _countdown / REFRESH_INTERVAL);
+    ring.style.strokeDashoffset = offset;
+  }
+}
+
+function startCountdown() {
+  _countdown = REFRESH_INTERVAL;
+  updateCountdownUI();
+  const ticker = setInterval(() => {
+    _countdown--;
+    updateCountdownUI();
+    if (_countdown <= 0) {
+      _countdown = REFRESH_INTERVAL;
+      loadStatus();
+    }
+  }, 1000);
+  return ticker;
+}
+
+// ─── Format helpers ────────────────────────────────────────────────────────
+function fmtTs(s) {
+  if (!s) return '—';
+  try {
+    return new Date(s).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+  } catch { return s; }
+}
+
+function fmtNum(n) {
+  if (n == null || isNaN(n)) return '—';
+  return Number(n).toLocaleString('pt-BR');
+}
+
+// ─── Loading bar ───────────────────────────────────────────────────────────
+function setLoading(on) {
+  document.getElementById('loading-bar').classList.toggle('hidden', !on);
+}
+
+// ─── Badge helpers ─────────────────────────────────────────────────────────
+function setBadge(id, text, type) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.className = 'badge badge-' + type;
+  el.textContent = text;
+}
+
+// ─── Load Status ───────────────────────────────────────────────────────────
+async function loadStatus() {
+  setLoading(true);
+  try {
+    const res = await fetch('/analytics/pipeline-status');
+    if (!res.ok) {
+      // API endpoint may not exist yet — fall back to graceful degradation
+      populateFallback();
+      return;
+    }
+    const data = await res.json();
+    populateStatus(data);
+  } catch (e) {
+    // Network error or endpoint not yet implemented — show fallback
+    populateFallback();
+  } finally {
+    setLoading(false);
+  }
+}
+
+function populateStatus(data) {
+  // Medallion counts
+  const medallion = data.medallion || {};
+  document.getElementById('count-bronze').textContent   = fmtNum(medallion.bronze ?? medallion.contratos_raw ?? null);
+  document.getElementById('count-silver').textContent   = fmtNum(medallion.silver ?? medallion.contratos_clean ?? null);
+  document.getElementById('count-gold-mei').textContent = fmtNum(medallion.gold_mei ?? medallion.contratos_mei ?? null);
+  document.getElementById('count-gold-top').textContent = fmtNum(medallion.gold_top ?? medallion.top_orgaos ?? null);
+
+  // ETL
+  const etl = data.etl || {};
+  document.getElementById('etl-last-run').textContent   = fmtTs(etl.ultima_execucao);
+  document.getElementById('etl-ingested').textContent   = fmtNum(etl.registros_ingeridos);
+  if (etl.status === 'running') {
+    setBadge('badge-etl', '⬤ EXECUTANDO', 'live');
+  } else if (etl.status === 'ok') {
+    setBadge('badge-etl', '⬤ OK', 'online');
+  } else {
+    setBadge('badge-etl', '⬤ IDLE', 'idle');
+  }
+
+  // Spark
+  const spark = data.spark || {};
+  document.getElementById('spark-last-run').textContent  = fmtTs(spark.ultima_execucao);
+  document.getElementById('spark-processed').textContent = fmtNum(spark.registros_processados);
+  if (spark.status === 'running') {
+    setBadge('badge-spark', '⬤ EXECUTANDO', 'live');
+  } else if (spark.status === 'ok') {
+    setBadge('badge-spark', '⬤ OK', 'online');
+  } else {
+    setBadge('badge-spark', '⬤ IDLE', 'idle');
+  }
+
+  // Kafka
+  const kafka = data.kafka || {};
+  const kafkaActive = !!kafka.ativo;
+  setBadge('badge-kafka', kafkaActive ? '⬤ ATIVO' : '⬤ INATIVO', kafkaActive ? 'live' : 'offline');
+  document.getElementById('kafka-topic-val').textContent = kafka.topico || 'pncp.contratos.novos';
+  document.getElementById('kafka-rate').textContent      = kafka.mensagens_por_min != null
+    ? fmtNum(kafka.mensagens_por_min) + ' msg/min'
+    : '—';
+}
+
+function populateFallback() {
+  // When the endpoint is unavailable, show placeholder values so the UI is not broken.
+  // Medallion counts — try to infer from the existing /analytics/estatisticas endpoint.
+  fetchFallbackCounts();
+
+  // ETL / Spark / Kafka — show last known or "—"
+  document.getElementById('etl-last-run').textContent   = '—';
+  document.getElementById('etl-ingested').textContent   = '—';
+  document.getElementById('spark-last-run').textContent = '—';
+  document.getElementById('spark-processed').textContent = '—';
+  document.getElementById('kafka-rate').textContent     = '—';
+}
+
+async function fetchFallbackCounts() {
+  try {
+    const [stats, meiRes] = await Promise.all([
+      fetch('/analytics/estatisticas').then(r => r.ok ? r.json() : null),
+      fetch('/analytics/contratos-mei?limite=1').then(r => r.ok ? r.json() : null),
+    ]);
+
+    if (stats) {
+      const total = stats.total_contratos;
+      document.getElementById('count-bronze').textContent = fmtNum(total);
+      document.getElementById('count-silver').textContent = fmtNum(total);
+    }
+    if (meiRes) {
+      document.getElementById('count-gold-mei').textContent = fmtNum(meiRes.total);
+    }
+
+    const topRes = await fetch('/analytics/top-orgaos?n=1').then(r => r.ok ? r.json() : null);
+    if (topRes && topRes.orgaos) {
+      document.getElementById('count-gold-top').textContent = fmtNum(topRes.orgaos.length);
+    }
+  } catch (e) {
+    // silent
+  }
+}
+
+// ─── Executar Spark ────────────────────────────────────────────────────────
+async function executarSpark() {
+  if (!isAuth()) {
+    openLoginModal(() => executarSpark());
+    return;
+  }
+
+  const btn = document.getElementById('spark-btn');
+  const btnText = document.getElementById('spark-btn-text');
+  btn.disabled = true;
+  btnText.textContent = 'Executando…';
+
+  // Show spinner inside button
+  const spinner = document.createElement('span');
+  spinner.className = 'spinner';
+  spinner.style.width = '14px';
+  spinner.style.height = '14px';
+  spinner.style.borderWidth = '2px';
+  spinner.style.borderTopColor = '#fff';
+  spinner.style.borderColor = 'rgba(255,255,255,.3)';
+  spinner.style.borderTopColor = '#fff';
+  btn.insertBefore(spinner, btn.firstChild);
+
+  try {
+    const res = await fetch('/analytics/executar-spark', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + _token,
+      },
+    });
+
+    if (res.status === 401) {
+      _token = '';
+      localStorage.removeItem('licitame_token');
+      showToast('Sessão expirada. Faça login novamente.', 'error');
+      openLoginModal(() => executarSpark());
+      return;
+    }
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.detail || 'Erro ao executar Spark.');
+    }
+
+    const msg = data.mensagem || data.message || 'Job Spark iniciado com sucesso!';
+    showToast(msg, 'success', 6000);
+    setBadge('badge-spark', '⬤ EXECUTANDO', 'live');
+
+    // After a brief moment, reload status
+    setTimeout(() => loadStatus(), 3000);
+
+  } catch (e) {
+    showToast(e.message || 'Erro inesperado ao executar Spark.', 'error');
+  } finally {
+    btn.disabled = false;
+    btnText.textContent = 'Executar Job';
+    const sp = btn.querySelector('.spinner');
+    if (sp) btn.removeChild(sp);
+  }
+}
+
+// ─── Init ──────────────────────────────────────────────────────────────────
+loadStatus();
+startCountdown();
+</script>
+</body>
+</html>

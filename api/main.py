@@ -234,6 +234,7 @@ async def health():
 
 _CHAT_HTML = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "frontend", "chat.html")
 _DASHBOARD_HTML = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "frontend", "dashboard.html")
+_MONITOR_HTML = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "frontend", "monitor.html")
 
 
 @app.get("/app", include_in_schema=False)
@@ -246,3 +247,9 @@ async def chat_app():
 async def dashboard_app():
     """Serve o dashboard de analytics LicitaME."""
     return FileResponse(_DASHBOARD_HTML, media_type="text/html")
+
+
+@app.get("/monitor", include_in_schema=False)
+async def monitor_app():
+    """Serve o monitor da pipeline Medallion."""
+    return FileResponse(_MONITOR_HTML, media_type="text/html")
