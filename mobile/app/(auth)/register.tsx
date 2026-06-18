@@ -47,6 +47,10 @@ export default function RegisterScreen() {
       Alert.alert("Campos obrigatórios", "Preencha todos os campos.");
       return;
     }
+    if (cnpj.replace(/\D/g, "").length !== 14) {
+      Alert.alert("CNPJ inválido", "Digite um CNPJ completo com 14 dígitos.");
+      return;
+    }
     if (!aceitouTermos) {
       Alert.alert("Termos obrigatórios", "Você precisa aceitar os Termos de Uso para criar uma conta.");
       return;
@@ -59,7 +63,12 @@ export default function RegisterScreen() {
     try {
       await registrar(nome.trim(), email.trim().toLowerCase(), cnpj, senha);
     } catch (e: any) {
-      const mensagem = e?.response?.data?.detail ?? "Erro ao criar conta.";
+      const raw = e?.response?.data?.detail;
+      const mensagem = typeof raw === "string"
+        ? raw
+        : Array.isArray(raw)
+        ? raw.map((d: any) => d.msg ?? "Campo inválido").join("\n")
+        : "Erro ao criar conta.";
       Alert.alert("Erro no cadastro", mensagem);
     } finally {
       setCarregando(false);

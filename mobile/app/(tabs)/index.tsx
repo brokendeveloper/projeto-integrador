@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { api } from "../../services/api";
+import { useAuth } from "../../hooks/useAuth";
 import { Colors, Radius, Spacing, Shadow } from "../../constants/theme";
 import { useFocusEffect, useRouter } from "expo-router";
 
@@ -48,6 +49,7 @@ function formatarData(data: string | null): string {
 
 export default function EditaisScreen() {
   const router = useRouter();
+  const { autenticado } = useAuth();
   const [busca, setBusca] = useState("");
   const [editais, setEditais] = useState<Edital[]>([]);
   const [carregando, setCarregando] = useState(false);
@@ -82,8 +84,9 @@ const onRefresh = useCallback(async () => {
 
   useFocusEffect(
     useCallback(() => {
+      if (!autenticado) return;
       buscarEditais(1, true);
-    }, [])
+    }, [autenticado])
   );
 
   function handleBuscar() {
