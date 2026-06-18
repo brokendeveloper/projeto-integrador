@@ -36,6 +36,7 @@ export default function RegisterScreen() {
   const [cnpj, setCnpj] = useState("");
   const [senha, setSenha] = useState("");
   const [carregando, setCarregando] = useState(false);
+  const [aceitouTermos, setAceitouTermos] = useState(false);
 
   function handleCnpjChange(valor: string) {
     setCnpj(aplicarMascaraCNPJ(valor));
@@ -44,6 +45,10 @@ export default function RegisterScreen() {
   async function handleRegistrar() {
     if (!nome || !email || !cnpj || !senha) {
       Alert.alert("Campos obrigatórios", "Preencha todos os campos.");
+      return;
+    }
+    if (!aceitouTermos) {
+      Alert.alert("Termos obrigatórios", "Você precisa aceitar os Termos de Uso para criar uma conta.");
       return;
     }
     if (senha.length < 8) {
@@ -130,6 +135,20 @@ export default function RegisterScreen() {
             secureTextEntry
             placeholderTextColor={Colors.textLight}
           />
+
+          <TouchableOpacity
+            style={styles.checkboxRow}
+            onPress={() => setAceitouTermos(v => !v)}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.checkbox, aceitouTermos && styles.checkboxMarcado]}>
+              {aceitouTermos && <Text style={styles.checkboxTick}>✓</Text>}
+            </View>
+            <Text style={styles.checkboxTexto}>
+              Li e aceito os{" "}
+              <Text style={styles.checkboxLink}>Termos de Uso e Política de Privacidade</Text>
+            </Text>
+          </TouchableOpacity>
 
           <TouchableOpacity
             style={[styles.botao, carregando && styles.botaoDesabilitado]}
@@ -270,5 +289,43 @@ const styles = StyleSheet.create({
   linkDestaque: {
     color: Colors.primary,
     fontWeight: "700",
+  },
+  checkboxRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+    marginBottom: 14,
+    marginTop: 4,
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: Colors.border,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 1,
+    flexShrink: 0,
+  },
+  checkboxMarcado: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+  checkboxTick: {
+    color: Colors.white,
+    fontSize: 12,
+    fontWeight: "700",
+    lineHeight: 14,
+  },
+  checkboxTexto: {
+    flex: 1,
+    fontSize: 13,
+    color: Colors.textSecondary,
+    lineHeight: 19,
+  },
+  checkboxLink: {
+    color: Colors.primary,
+    fontWeight: "600",
   },
 });
