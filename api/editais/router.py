@@ -27,12 +27,13 @@ async def listar_editais(
     cnae: Optional[str] = Query(None, description="Código CNAE do MEI"),
     valor_max: Optional[float] = Query(None, description="Valor máximo do contrato em R$"),
     regiao: Optional[str] = Query(None, description="Município ou estado"),
+    favoravel_mei: Optional[bool] = Query(None, description="Se True, retorna apenas editais com valor ≤ R$ 80.000"),
     pagina: int = Query(1, ge=1),
     por_pagina: int = Query(20, ge=1, le=100),
     db: AsyncIOMotorDatabase = Depends(get_db),
     _: dict = Depends(get_usuario_atual),
 ):
-    return await buscar_editais(db, busca, cnae, valor_max, regiao, pagina, por_pagina)
+    return await buscar_editais(db, busca, cnae, valor_max, regiao, pagina, por_pagina, favoravel_mei)
 
 
 @router.get(

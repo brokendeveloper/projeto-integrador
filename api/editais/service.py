@@ -43,8 +43,14 @@ async def buscar_editais(
     regiao: Optional[str] = None,
     pagina: int = 1,
     por_pagina: int = 20,
+    favoravel_mei: Optional[bool] = None,
 ) -> dict:
     conditions = []
+    if favoravel_mei is True:
+        conditions.append({"$or": [
+            {"valorInicial": {"$gt": 0, "$lte": 80000}},
+            {"valor_inicial": {"$gt": 0, "$lte": 80000}},
+        ]})
     if valor_max:
         conditions.append({"$or": [
             {"valorInicial": {"$lte": valor_max}},
