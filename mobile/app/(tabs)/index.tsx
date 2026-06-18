@@ -69,7 +69,7 @@ const onRefresh = useCallback(async () => {
       if (busca.trim()) params.busca = busca.trim();
 
       const { data }: { data: Pagina } = await api.get("/editais", { params });
-      setEditais(reset ? data.items : [...editais, ...data.items]);
+      setEditais(prev => reset ? data.items : [...prev, ...data.items]);
       setPagina(data.pagina);
       setTotalPaginas(data.paginas);
       setTotal(data.total);
