@@ -41,6 +41,31 @@ const FAQ = [
     resposta:
       "Sim. O LicitaME segue a LGPD (Lei 13.709/2018). Suas senhas são criptografadas com bcrypt e seus dados podem ser exportados ou excluídos a qualquer momento via solicitação.",
   },
+    {
+    pergunta: "O que é CNPJ de habilitação e preciso ter o meu?",
+    resposta:
+      "Não existe um CNPJ específico de habilitação. Para participar de licitações, basta que seu MEI possua um CNPJ ativo e regular, além da documentação exigida no edital.",
+  },
+  {
+    pergunta: "Posso participar de licitação sozinho ou preciso de contador?",
+    resposta:
+      "O MEI pode participar de licitações sem a necessidade de um contador. No entanto, dependendo da complexidade do processo e das exigências fiscais, o apoio de um profissional pode ser útil.",
+  },
+  {
+    pergunta: "Como funciona o critério de desempate para MEI?",
+    resposta:
+      "Em algumas situações previstas na Lei Complementar 123/2006, MEIs e microempresas podem ter preferência em caso de empate com empresas de maior porte, seguindo as regras estabelecidas no edital.",
+  },
+  {
+    pergunta: "O que acontece se eu vencer e não puder entregar?",
+    resposta:
+      "Caso o vencedor não cumpra as obrigações assumidas, poderá sofrer penalidades previstas no edital e na legislação, como multas, suspensão temporária de participação em licitações e outras sanções administrativas.",
+  },
+  {
+    pergunta: "Quais documentos preciso ter em dia para participar?",
+    resposta:
+      "Os documentos variam conforme o edital, mas geralmente incluem CNPJ ativo, Certificado da Condição de Microempreendedor Individual (CCMEI), certidões fiscais e trabalhistas válidas, além de outros documentos de habilitação exigidos.",
+  },
 ];
 
 function FaqItem({ pergunta, resposta }: { pergunta: string; resposta: string }) {
