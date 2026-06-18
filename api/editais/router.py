@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, Query
 from typing import Optional
 from motor.motor_asyncio import AsyncIOMotorDatabase
-from .schemas import PaginacaoResponse, EditalDetalhe
-from .service import buscar_editais, buscar_edital_por_id
+from .schemas import PaginacaoResponse, EditalDetalhe, ResumoResponse
+from .service import buscar_editais, buscar_edital_por_id, gerar_resumo_edital
 from api.dependencies import get_db, get_usuario_atual
 
 router = APIRouter(prefix="/editais", tags=["📄 Editais"])
@@ -48,3 +48,22 @@ async def detalhar_edital(
     _: dict = Depends(get_usuario_atual),
 ):
     return await buscar_edital_por_id(edital_id, db)
+
+
+@router.get(
+    "/{edital_id}/resumo",
+    response_model=ResumoResponse,
+    summary="Gerar resumo inteligente do edital",
+    description=(
+        "Gera um resumo de 2-3 frases sobre o edital usando IA (Claude Haiku), "
+        "destacando o tipo de serviço/bem, valor e acessibilidade para MEIs.\n\n"
+        "O resumo é gerado apenas na primeira chamada e armazenado em cache no banco de dados. "
+        "Chamadas subsequentes retornam o resultado instantaneamente (`cached: true`)."
+    ),
+)
+async def resumo_edital(
+    edital_id: str,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    _: dict = Depends(get_usuario_atual),
+):
+    return await gerar_resumo_edital(edital_id, db)
