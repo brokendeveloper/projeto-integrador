@@ -14,6 +14,19 @@ import { useFocusEffect } from "expo-router";
 import { api } from "../../services/api";
 import { Colors, Radius, Spacing, Shadow } from "../../constants/theme";
 
+function dataRelativa(isoString: string): string {
+  const data = new Date(isoString);
+  const agora = new Date();
+  const diffDias = Math.floor((agora.getTime() - data.getTime()) / (1000 * 60 * 60 * 24));
+
+  if (diffDias <= 0) return "hoje";
+  if (diffDias === 1) return "há 1 dia";
+  if (diffDias < 30) return `há ${diffDias} dias`;
+
+  const diffMeses = Math.floor(diffDias / 30);
+  return diffMeses === 1 ? "há 1 mês" : `há ${diffMeses} meses`;
+}
+
 interface Alerta {
   id: string;
   nome?: string;
@@ -121,7 +134,7 @@ export default function AlertasScreen() {
             {partes.length > 0 ? partes.join(" · ") : "Sem filtros específicos"}
           </Text>
           <Text style={styles.alertaData}>
-            Criado em {new Date(item.criado_em).toLocaleDateString("pt-BR")}
+            Criado em {dataRelativa(item.criado_em)}
           </Text>
         </View>
         <TouchableOpacity
