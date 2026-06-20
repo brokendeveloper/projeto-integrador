@@ -25,6 +25,26 @@ interface Alerta {
 
 const LIMITE_FREE = 3;
 
+function dataRelativa(isoString: string): string {
+  const data = new Date(isoString);
+  const hoje = new Date();
+  data.setHours(0, 0, 0, 0);
+  hoje.setHours(0, 0, 0, 0);
+
+  const diferencaEmDias = Math.max(
+    0,
+    Math.floor((hoje.getTime() - data.getTime()) / (1000 * 60 * 60 * 24))
+  );
+
+  if (diferencaEmDias === 0) return "hoje";
+  if (diferencaEmDias === 1) return "há 1 dia";
+  if (diferencaEmDias < 30) return `há ${diferencaEmDias} dias`;
+
+  const diferencaEmMeses = Math.floor(diferencaEmDias / 30);
+  if (diferencaEmMeses === 1) return "há 1 mês";
+  return `há ${diferencaEmMeses} meses`;
+}
+
 export default function AlertasScreen() {
   const [alertas, setAlertas] = useState<Alerta[]>([]);
   const [carregando, setCarregando] = useState(false);
@@ -121,7 +141,7 @@ export default function AlertasScreen() {
             {partes.length > 0 ? partes.join(" · ") : "Sem filtros específicos"}
           </Text>
           <Text style={styles.alertaData}>
-            Criado em {new Date(item.criado_em).toLocaleDateString("pt-BR")}
+            Criado em {dataRelativa(item.criado_em)}
           </Text>
         </View>
         <TouchableOpacity
