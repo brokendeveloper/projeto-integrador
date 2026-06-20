@@ -35,7 +35,12 @@ export default function LoginScreen() {
     try {
       await login(email.trim().toLowerCase(), senha);
     } catch (e: any) {
-      const mensagem = e?.response?.data?.detail ?? "Credenciais inválidas.";
+      const raw = e?.response?.data?.detail;
+      const mensagem = typeof raw === "string"
+        ? raw
+        : Array.isArray(raw)
+        ? raw.map((d: any) => d.msg ?? "Dado inválido").join("\n")
+        : "Credenciais inválidas.";
       Alert.alert("Não foi possível entrar", mensagem);
     } finally {
       setCarregando(false);

@@ -27,6 +27,10 @@ interface EditalDetalhe {
   uf: string | null;
   favoravel_mei: boolean;
   url_edital: string | null;
+  informacao_complementar: string | null;
+  municipio: string | null;
+  data_vigencia_inicio: string | null;
+  valor_global: number | null;
 }
 
 function formatarMoeda(valor: number | null): string {
@@ -44,6 +48,8 @@ export default function EditalDetalheScreen() {
   const router = useRouter();
   const [edital, setEdital] = useState<EditalDetalhe | null>(null);
   const [carregando, setCarregando] = useState(true);
+  const [resumo, setResumo] = useState<string | null>(null);
+  const [gerandoResumo, setGerandoResumo] = useState(false);
 
   useEffect(() => {
     carregarEdital();
@@ -59,6 +65,18 @@ export default function EditalDetalheScreen() {
       ]);
     } finally {
       setCarregando(false);
+    }
+  }
+
+  async function handleGerarResumo() {
+    setGerandoResumo(true);
+    try {
+      const { data } = await api.get(`/editais/${id}/resumo`);
+      setResumo(data.resumo);
+    } catch {
+      Alert.alert("Erro", "Não foi possível gerar o resumo. Tente novamente.");
+    } finally {
+      setGerandoResumo(false);
     }
   }
 
@@ -103,6 +121,57 @@ export default function EditalDetalheScreen() {
         {/* Número de controle */}
         <Text style={styles.controle}>Nº {edital.numero_controle}</Text>
 
+        {/* Card: Resumo IA */}
+        <View style={styles.resumoCard}>
+          <View style={styles.resumoHeader}>
+            <Ionicons name="sparkles" size={16} color="#7C3AED" />
+            <Text style={styles.resumoTitulo}>Resumo Inteligente</Text>
+          </View>
+          {resumo ? (
+            <Text style={styles.resumoTexto}>{resumo}</Text>
+          ) : (
+            <Text style={styles.resumoVazio}>
+              Deixe a IA resumir este edital em 2-3 frases para você decidir rapidamente.
+            </Text>
+          )}
+          <TouchableOpacity
+            style={[styles.resumoBotao, gerandoResumo && styles.resumoBotaoDisabled]}
+            onPress={handleGerarResumo}
+            disabled={gerandoResumo}
+            activeOpacity={0.8}
+          >
+            {gerandoResumo ? (
+              <>
+                <ActivityIndicator size="small" color="#7C3AED" />
+                <Text style={styles.resumoBotaoTexto}>Gerando resumo...</Text>
+              </>
+            ) : (
+              <>
+                <Ionicons name="refresh-outline" size={14} color="#7C3AED" />
+                <Text style={styles.resumoBotaoTexto}>
+                  {resumo ? "Gerar novamente" : "Gerar resumo"}
+                </Text>
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
+
+        {/* Link PNCP — edital completo */}
+        {edital.url_edital && (
+          <TouchableOpacity
+            style={styles.linkPncp}
+            onPress={() => Linking.openURL(edital.url_edital!)}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="document-text-outline" size={18} color={Colors.primary} />
+            <View style={styles.linkPncpTextos}>
+              <Text style={styles.linkPncpLabel}>Edital completo</Text>
+              <Text style={styles.linkPncpSub}>Ver no portal PNCP</Text>
+            </View>
+            <Ionicons name="open-outline" size={16} color={Colors.primary} />
+          </TouchableOpacity>
+        )}
+
         {/* Seção: Órgão */}
         <View style={styles.secao}>
           <Text style={styles.secaoTitulo}>Órgão responsável</Text>
@@ -110,10 +179,12 @@ export default function EditalDetalheScreen() {
             <Ionicons name="business-outline" size={16} color={Colors.primary} />
             <Text style={styles.infoTexto}>{edital.orgao}</Text>
           </View>
-          {edital.uf && (
+          {(edital.municipio || edital.uf) && (
             <View style={styles.infoRow}>
               <Ionicons name="location-outline" size={16} color={Colors.textLight} />
-              <Text style={styles.infoTexto}>{edital.uf}</Text>
+              <Text style={styles.infoTexto}>
+                {[edital.municipio, edital.uf].filter(Boolean).join(" · ")}
+              </Text>
             </View>
           )}
           {edital.cnpj_orgao && (
@@ -135,10 +206,22 @@ export default function EditalDetalheScreen() {
                 {formatarMoeda(edital.valor_estimado)}
               </Text>
             </View>
+            {edital.valor_global && (
+              <View style={styles.gridItem}>
+                <Text style={styles.gridLabel}>Valor global</Text>
+                <Text style={styles.gridValor}>{formatarMoeda(edital.valor_global)}</Text>
+              </View>
+            )}
             <View style={styles.gridItem}>
               <Text style={styles.gridLabel}>Encerra em</Text>
               <Text style={styles.gridValor}>{formatarData(edital.data_encerramento)}</Text>
             </View>
+            {edital.data_vigencia_inicio && (
+              <View style={styles.gridItem}>
+                <Text style={styles.gridLabel}>Início da vigência</Text>
+                <Text style={styles.gridValor}>{formatarData(edital.data_vigencia_inicio)}</Text>
+              </View>
+            )}
             <View style={styles.gridItem}>
               <Text style={styles.gridLabel}>Publicado em</Text>
               <Text style={styles.gridValor}>{formatarData(edital.data_publicacao)}</Text>
@@ -152,17 +235,12 @@ export default function EditalDetalheScreen() {
           </View>
         </View>
 
-        {/* Link PNCP */}
-        {edital.url_edital && (
-          <TouchableOpacity
-            style={styles.linkPncp}
-            onPress={() => Linking.openURL(edital.url_edital!)}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="open-outline" size={16} color={Colors.primary} />
-            <Text style={styles.linkPncpTexto}>Ver edital original no PNCP</Text>
-            <Ionicons name="chevron-forward" size={14} color={Colors.primary} />
-          </TouchableOpacity>
+        {/* Seção: Informações complementares */}
+        {edital.informacao_complementar && (
+          <View style={styles.secao}>
+            <Text style={styles.secaoTitulo}>Informações complementares</Text>
+            <Text style={styles.infoComplementar}>{edital.informacao_complementar}</Text>
+          </View>
         )}
 
         {/* Ações */}
@@ -283,8 +361,86 @@ const styles = StyleSheet.create({
   controle: {
     fontSize: 12,
     color: Colors.textLight,
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.md,
     fontFamily: "monospace" as any,
+  },
+  resumoCard: {
+    backgroundColor: "#F5F3FF",
+    borderRadius: Radius.lg,
+    padding: Spacing.md,
+    marginBottom: Spacing.md,
+    borderWidth: 1,
+    borderColor: "#DDD6FE",
+  },
+  resumoHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: Spacing.sm,
+  },
+  resumoTitulo: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#7C3AED",
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+  },
+  resumoTexto: {
+    fontSize: 14,
+    color: "#3B0764",
+    lineHeight: 21,
+    marginBottom: Spacing.sm,
+  },
+  resumoVazio: {
+    fontSize: 13,
+    color: "#6D28D9",
+    lineHeight: 19,
+    marginBottom: Spacing.sm,
+    opacity: 0.7,
+  },
+  resumoBotao: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    backgroundColor: "#EDE9FE",
+    borderRadius: Radius.sm,
+    paddingVertical: 8,
+    paddingHorizontal: Spacing.md,
+    alignSelf: "flex-start",
+  },
+  resumoBotaoDisabled: {
+    opacity: 0.6,
+  },
+  resumoBotaoTexto: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#7C3AED",
+  },
+  linkPncp: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+    backgroundColor: Colors.primaryLight,
+    borderRadius: Radius.md,
+    padding: Spacing.md,
+    marginBottom: Spacing.md,
+    borderWidth: 1.5,
+    borderColor: Colors.primary + "40",
+  },
+  linkPncpTextos: {
+    flex: 1,
+  },
+  linkPncpLabel: {
+    fontSize: 14,
+    color: Colors.primary,
+    fontWeight: "700",
+  },
+  linkPncpSub: {
+    fontSize: 11,
+    color: Colors.primary,
+    opacity: 0.7,
+    marginTop: 1,
   },
   secao: {
     backgroundColor: Colors.white,
@@ -315,6 +471,11 @@ const styles = StyleSheet.create({
     flex: 1,
     lineHeight: 20,
   },
+  infoComplementar: {
+    fontSize: 13,
+    color: Colors.textSecondary,
+    lineHeight: 20,
+  },
   gridInfo: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -339,23 +500,6 @@ const styles = StyleSheet.create({
   },
   gridValorFavoravel: {
     color: Colors.success,
-  },
-  linkPncp: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.sm,
-    backgroundColor: Colors.primaryLight,
-    borderRadius: Radius.md,
-    padding: Spacing.md,
-    marginBottom: Spacing.md,
-    borderWidth: 1,
-    borderColor: Colors.primary + "30",
-  },
-  linkPncpTexto: {
-    flex: 1,
-    fontSize: 13,
-    color: Colors.primary,
-    fontWeight: "600",
   },
   acaoPrimaria: {
     flexDirection: "row",
