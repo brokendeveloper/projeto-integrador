@@ -18,6 +18,15 @@ class EditalResumo(BaseModel):
 class EditalDetalhe(EditalResumo):
     cnpj_orgao: Optional[str] = None
     url_edital: Optional[str] = None
+    informacao_complementar: Optional[str] = None
+    municipio: Optional[str] = None
+    data_vigencia_inicio: Optional[str] = None
+    valor_global: Optional[float] = None
+
+
+class ResumoResponse(BaseModel):
+    resumo: str
+    cached: bool = False
 
 
 class PaginacaoResponse(BaseModel):

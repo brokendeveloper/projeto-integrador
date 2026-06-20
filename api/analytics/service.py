@@ -153,95 +153,93 @@ async def executar_spark() -> SparkJobResponse:
 
 def obter_dados_spark() -> SparkSummaryResponse:
     """Lê os CSVs produzidos pelo PySpark e monta o SparkSummaryResponse."""
-    f_completo = _SPARK_DIR / "contratos_completo.csv"
-    f_mei = _SPARK_DIR / "contratos_mei.csv"
-    f_top = _SPARK_DIR / "top_orgaos.csv"
+    try:
+        f_completo = _SPARK_DIR / "contratos_completo.csv"
+        f_mei = _SPARK_DIR / "contratos_mei.csv"
+        f_top = _SPARK_DIR / "top_orgaos.csv"
 
-    if not any(p.exists() for p in [f_completo, f_mei, f_top]):
+        if not any(p.exists() for p in [f_completo, f_mei, f_top]):
+            return SparkSummaryResponse(disponivel=False)
+
+        # ── Total processado ──────────────────────────────────────────────────────
+        total_processado = 0
+        ultimo_processamento: str | None = None
+        if f_completo.exists():
+            df_all = pd.read_csv(f_completo)
+            total_processado = len(df_all)
+            if "_etl_timestamp" in df_all.columns and not df_all.empty:
+                ts = pd.to_datetime(df_all["_etl_timestamp"].iloc[0], errors="coerce")
+                if pd.notna(ts):
+                    ultimo_processamento = ts.isoformat()
+
+        # ── MEI stats + buckets + sample ─────────────────────────────────────────
+        total_mei = 0
+        mei_media: float | None = None
+        mei_max: float | None = None
+        mei_min: float | None = None
+        mei_buckets: list[SparkMEIBucket] = []
+        mei_sample: list[SparkContratoItem] = []
+
+        if f_mei.exists():
+            df_mei = pd.read_csv(f_mei)
+            total_mei = len(df_mei)
+            if "valorInicial" in df_mei.columns and not df_mei.empty:
+                vals = df_mei["valorInicial"].dropna()
+                if not vals.empty:
+                    mei_media = round(float(vals.mean()), 2)
+                    mei_max = round(float(vals.max()), 2)
+                    mei_min = round(float(vals.min()), 2)
+                    # Histograma em buckets de R$ 10k
+                    # 9 edges → 8 intervalos → 8 labels
+                    bins = list(range(0, 90_000, 10_000))  # [0,10k,20k,...,80k]
+                    labels = [f"R$ {b//1000}k–{(b+10_000)//1000}k" for b in bins[:-1]]  # 8 labels
+                    cut = pd.cut(vals, bins=bins, labels=labels, right=True, include_lowest=True)
+                    for label, cnt in cut.value_counts().sort_index().items():
+                        mei_buckets.append(SparkMEIBucket(label=str(label), count=int(cnt)))
+
+            sample_rows = df_mei.head(20)
+            for _, row in sample_rows.iterrows():
+                mei_sample.append(SparkContratoItem(
+                    numero_controle=row.get("numeroControlePNCP"),
+                    objeto=row.get("objetoContrato"),
+                    valor_inicial=row.get("valorInicial") if pd.notna(row.get("valorInicial")) else None,
+                    orgao_nome=row.get("orgao_nome"),
+                    data_publicacao=row.get("dataPublicacaoPncp"),
+                ))
+
+        # ── Top órgãos ────────────────────────────────────────────────────────────
+        top_orgaos: list[SparkOrgaoItem] = []
+        top_orgao: str | None = None
+        top_orgao_count = 0
+
+        if f_top.exists():
+            df_top = pd.read_csv(f_top)
+            for _, row in df_top.iterrows():
+                top_orgaos.append(SparkOrgaoItem(
+                    orgao=str(row.get("orgao_nome", "")),
+                    count=int(row.get("count", 0)),
+                ))
+            if top_orgaos:
+                top_orgao = top_orgaos[0].orgao
+                top_orgao_count = top_orgaos[0].count
+
+        return SparkSummaryResponse(
+            disponivel=True,
+            total_processado=total_processado,
+            total_mei=total_mei,
+            ultimo_processamento=ultimo_processamento,
+            top_orgao=top_orgao,
+            top_orgao_count=top_orgao_count,
+            top_orgaos=top_orgaos,
+            mei_media_valor=mei_media,
+            mei_max_valor=mei_max,
+            mei_min_valor=mei_min,
+            mei_buckets=mei_buckets,
+            mei_sample=mei_sample,
+        )
+    except Exception:
+        logger.exception("[SPARK] Erro ao ler dados do Spark — retornando disponivel=False.")
         return SparkSummaryResponse(disponivel=False)
-
-    # ── Total processado ──────────────────────────────────────────────────────
-    total_processado = 0
-    ultimo_processamento: str | None = None
-    if f_completo.exists():
-        df_all = pd.read_csv(f_completo)
-        total_processado = len(df_all)
-        if "_etl_timestamp" in df_all.columns and not df_all.empty:
-            ts = pd.to_datetime(df_all["_etl_timestamp"].iloc[0], errors="coerce")
-            if pd.notna(ts):
-                ultimo_processamento = ts.isoformat()
-
-    # ── MEI stats + buckets + sample ─────────────────────────────────────────
-    total_mei = 0
-    mei_media: float | None = None
-    mei_max: float | None = None
-    mei_min: float | None = None
-    mei_buckets: list[SparkMEIBucket] = []
-    mei_sample: list[SparkContratoItem] = []
-
-    if f_mei.exists():
-        df_mei = pd.read_csv(f_mei)
-        total_mei = len(df_mei)
-        if "valorInicial" in df_mei.columns and not df_mei.empty:
-            vals = df_mei["valorInicial"].dropna()
-            if not vals.empty:
-                mei_media = round(float(vals.mean()), 2)
-                mei_max = round(float(vals.max()), 2)
-                mei_min = round(float(vals.min()), 2)
-                # Histograma em buckets de R$ 10k
-                bins = list(range(0, 90_000, 10_000))
-                labels = [f"R$ {b//1000}k–{(b+10_000)//1000}k" for b in bins]
-                cut = pd.cut(vals, bins=bins + [80_000], labels=labels, right=True)
-                for label, cnt in cut.value_counts().sort_index().items():
-                    mei_buckets.append(SparkMEIBucket(label=str(label), count=int(cnt)))
-
-        col_map = {
-            "numeroControlePNCP": "numero_controle",
-            "objetoContrato": "objeto",
-            "valorInicial": "valor_inicial",
-            "orgao_nome": "orgao_nome",
-            "dataPublicacaoPncp": "data_publicacao",
-        }
-        sample_rows = df_mei.head(20)
-        for _, row in sample_rows.iterrows():
-            mei_sample.append(SparkContratoItem(
-                numero_controle=row.get("numeroControlePNCP"),
-                objeto=row.get("objetoContrato"),
-                valor_inicial=row.get("valorInicial") if pd.notna(row.get("valorInicial")) else None,
-                orgao_nome=row.get("orgao_nome"),
-                data_publicacao=row.get("dataPublicacaoPncp"),
-            ))
-
-    # ── Top órgãos ────────────────────────────────────────────────────────────
-    top_orgaos: list[SparkOrgaoItem] = []
-    top_orgao: str | None = None
-    top_orgao_count = 0
-
-    if f_top.exists():
-        df_top = pd.read_csv(f_top)
-        for _, row in df_top.iterrows():
-            top_orgaos.append(SparkOrgaoItem(
-                orgao=str(row.get("orgao_nome", "")),
-                count=int(row.get("count", 0)),
-            ))
-        if top_orgaos:
-            top_orgao = top_orgaos[0].orgao
-            top_orgao_count = top_orgaos[0].count
-
-    return SparkSummaryResponse(
-        disponivel=True,
-        total_processado=total_processado,
-        total_mei=total_mei,
-        ultimo_processamento=ultimo_processamento,
-        top_orgao=top_orgao,
-        top_orgao_count=top_orgao_count,
-        top_orgaos=top_orgaos,
-        mei_media_valor=mei_media,
-        mei_max_valor=mei_max,
-        mei_min_valor=mei_min,
-        mei_buckets=mei_buckets,
-        mei_sample=mei_sample,
-    )
 
 
 async def _aguardar_spark(proc: asyncio.subprocess.Process) -> None:
